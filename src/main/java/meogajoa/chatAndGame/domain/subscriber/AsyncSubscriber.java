@@ -8,6 +8,7 @@ import meogajoa.chatAndGame.common.model.MessageType;
 import meogajoa.chatAndGame.domain.chat.dto.ChatLog;
 import meogajoa.chatAndGame.domain.chat.publisher.RedisPubSubRoomChatPublisher;
 import meogajoa.chatAndGame.domain.chat.repository.CustomRedisChatLogRepository;
+import meogajoa.chatAndGame.domain.room.dto.RoomUserInfo;
 import meogajoa.chatAndGame.domain.room.publisher.RedisPubSubRoomInfoPublisher;
 import org.springframework.data.redis.connection.stream.Consumer;
 import org.springframework.data.redis.connection.stream.MapRecord;
@@ -78,6 +79,11 @@ public class AsyncSubscriber {
 
     public void handleRoomInfoMessage(MapRecord<String, String, String> record) {
         try {
+            String roomId = record.getValue().get("roomId");
+            String users = record.getValue().get("users");
+
+            RoomUserInfo roomUserInfo = objectMapper.readValue(users, RoomUserInfo.class);
+
             stringRedisTemplate.opsForStream().acknowledge(record.getStream(), GROUP_NAME, record.getId());
             stringRedisTemplate.opsForStream().delete(record.getStream(), record.getId());
         } catch (Exception e) {

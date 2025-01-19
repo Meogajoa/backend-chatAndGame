@@ -61,12 +61,10 @@ public class Message {
     @Data
     @Builder
     public static class RoomInfoPubSubResponse {
-        String id;
         RoomUserInfo roomUserInfo;
 
         public static RoomInfoPubSubResponse of(String id, RoomUserInfo roomUserInfo) {
             return RoomInfoPubSubResponse.builder()
-                    .id(id)
                     .roomUserInfo(roomUserInfo)
                     .build();
         }
