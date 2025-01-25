@@ -34,7 +34,7 @@ public class RedisConfig {
     @Value("${spring.data.redis.port}")
     private int port;
 
-    @Bean
+    @Bean("virtualThreadExecutor")
     public Executor virtualThreadExecutor() {
         return Executors.newThreadPerTaskExecutor(
                 Thread.ofVirtual().name("redis-listener-%d").factory()

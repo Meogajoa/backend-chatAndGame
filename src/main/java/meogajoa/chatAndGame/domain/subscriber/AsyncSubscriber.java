@@ -26,9 +26,8 @@ public class AsyncSubscriber {
     private final StringRedisTemplate stringRedisTemplate;
     private final ObjectMapper objectMapper;
     private final String ASYNC_STREAM_KEY = "stream:async:";
-    private final String GROUP_NAME = "consumer-group";
+    private final String GROUP_NAME = "async-consumer-group";
     private final RedisPubSubRoomChatPublisher redisPubSubRoomChatPublisher;
-    private final RedisPubSubRoomInfoPublisher redisPubSubRoomInfoPublisher;
     private final CustomRedisChatLogRepository customRedisChatLogRepository;
 
     @PostConstruct
@@ -43,7 +42,7 @@ public class AsyncSubscriber {
             }
         }
 
-        String consumerName = "Consumer";
+        String consumerName = "asyncConsumer";
 
         Consumer consumer = Consumer.from(GROUP_NAME, consumerName);
 
@@ -68,10 +67,8 @@ public class AsyncSubscriber {
                     handleRoomChat(record);;
                     break;
                 default:
-                    System.out.println("Unknown type: " + type);
             }
         } catch (Exception e) {
-            System.err.println("Error processing message: " + e.getMessage());
             e.printStackTrace();
         }
 
@@ -87,7 +84,6 @@ public class AsyncSubscriber {
             stringRedisTemplate.opsForStream().acknowledge(record.getStream(), GROUP_NAME, record.getId());
             stringRedisTemplate.opsForStream().delete(record.getStream(), record.getId());
         } catch (Exception e) {
-            System.err.println("Error processing room info message: " + e.getMessage());
             e.printStackTrace();
         }
     }

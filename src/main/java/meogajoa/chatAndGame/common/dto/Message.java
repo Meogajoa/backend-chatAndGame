@@ -69,4 +69,13 @@ public class Message {
                     .build();
         }
     }
+
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Data
+    @Builder
+    public static class GameMQRequest {
+        private MessageType type;
+        private String content;
+    }
 }
