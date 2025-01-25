@@ -61,6 +61,7 @@ public class SyncSubscriber {
             switch (type) {
                 case "GAME_START":
                     String gameId = record.getValue().get("gameId");
+                    System.out.println("게임 시작 메시지 받음");
                     gameSessionManager.addGameSession(gameId);
                     break;
                 case "ROOM_INFO":

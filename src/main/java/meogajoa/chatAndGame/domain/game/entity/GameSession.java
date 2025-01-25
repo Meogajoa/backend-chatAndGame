@@ -65,7 +65,11 @@ public class GameSession {
         requestQueue.clear();
     }
 
-    @Async("gameRunningExecutor")
-    public void startGame() {
+    public void startGame() throws InterruptedException {
+        // Game logic
+        for(int i = 1; i <= 10; i++){
+            System.out.println("게임 진행 중: " + i);
+            Thread.sleep(1000);
+        }
     }
 }
