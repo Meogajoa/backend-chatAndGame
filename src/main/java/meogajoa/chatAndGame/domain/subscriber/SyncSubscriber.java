@@ -68,6 +68,9 @@ public class SyncSubscriber {
                 default:
                     break;
             }
+
+            stringRedisTemplate.opsForStream().acknowledge(record.getStream(), GROUP_NAME, record.getId());
+            stringRedisTemplate.opsForStream().delete(record.getStream(), record.getId());
         } catch (Exception e) {
             e.printStackTrace();
         }

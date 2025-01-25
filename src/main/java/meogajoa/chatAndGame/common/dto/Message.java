@@ -7,7 +7,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import meogajoa.chatAndGame.common.model.MessageType;
 import meogajoa.chatAndGame.domain.chat.dto.ChatLog;
-import meogajoa.chatAndGame.domain.room.dto.RoomUserInfo;
 
 public class Message {
 
@@ -60,22 +59,18 @@ public class Message {
     @NoArgsConstructor
     @Data
     @Builder
-    public static class RoomInfoPubSubResponse {
-        RoomUserInfo roomUserInfo;
-
-        public static RoomInfoPubSubResponse of(String id, RoomUserInfo roomUserInfo) {
-            return RoomInfoPubSubResponse.builder()
-                    .roomUserInfo(roomUserInfo)
-                    .build();
-        }
+    public static class GameMQRequest {
+        private MessageType type;
+        private String content;
     }
 
     @AllArgsConstructor
     @NoArgsConstructor
     @Data
     @Builder
-    public static class GameMQRequest {
+    public static class GameStartPubSubResponse {
         private MessageType type;
+        private String gameId;
         private String content;
     }
 }
