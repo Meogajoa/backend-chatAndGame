@@ -3,6 +3,7 @@ package meogajoa.chatAndGame.domain.subscriber;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import meogajoa.chatAndGame.common.dto.Message;
 import meogajoa.chatAndGame.domain.chat.publisher.RedisPubSubRoomChatPublisher;
 import meogajoa.chatAndGame.domain.chat.repository.CustomRedisChatLogRepository;
 import meogajoa.chatAndGame.domain.game.manager.GameSessionManager;
@@ -24,6 +25,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public class SyncSubscriber {
     private final StreamMessageListenerContainer<String, MapRecord<String, String, String>> listenerContainer;
     private final StringRedisTemplate stringRedisTemplate;
+    private final ObjectMapper objectMapper;
     private final String SYNC_STREAM_KEY = "stream:sync:";
     private final String GROUP_NAME = "sync-consumer-group";
 
@@ -66,6 +68,9 @@ public class SyncSubscriber {
                     break;
                 case "ROOM_INFO":
                     break;
+                case "TEST":
+                    handleTest(record);
+                    break;
                 default:
                     break;
             }
@@ -77,6 +82,11 @@ public class SyncSubscriber {
         }
 
 
+    }
+
+    public void handleTest(MapRecord<String, String, String> record) {
+        Message.GameMQRequest request = objectMapper.convertValue(record.getValue(), Message.GameMQRequest.class);
+        gameSessionManager.addRequest(request);
     }
 
 

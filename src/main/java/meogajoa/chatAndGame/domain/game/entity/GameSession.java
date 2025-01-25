@@ -1,10 +1,13 @@
 package meogajoa.chatAndGame.domain.game.entity;
 
 import meogajoa.chatAndGame.common.dto.Message;
+import meogajoa.chatAndGame.common.model.MessageType;
 import net.bytebuddy.dynamic.scaffold.MethodGraph;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
+import java.time.LocalDateTime;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -18,7 +21,7 @@ public class GameSession {
 
     private volatile boolean isGameRunning = true;
 
-    public GameSession(String gameId, ThreadPoolTaskExecutor executor) {
+    public GameSession(String gameId, @Qualifier("gameLogicExecutor") ThreadPoolTaskExecutor executor) {
         this.gameId = gameId;
         this.executor = executor;
     }
@@ -57,7 +60,9 @@ public class GameSession {
     }
 
     private void handleRequest(Message.GameMQRequest request){
-
+        if(request.getType() == MessageType.TEST){
+            System.out.println(LocalDateTime.now() + "에 보냈어요!!!: ");
+        }
     }
 
     public void stopSession() {

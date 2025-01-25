@@ -8,6 +8,7 @@ public enum MessageType {
     CHAT("CHAT"),
     SYSTEM("SYSTEM"),
     GAME_START("GAME_START"),
+    TEST("TEST"),
     GAME_END("GAME_END");
 
     private final String value;

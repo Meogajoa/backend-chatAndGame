@@ -61,6 +61,8 @@ public class Message {
     @Builder
     public static class GameMQRequest {
         private MessageType type;
+        private String gameId;
+        private String sender;
         private String content;
     }
 

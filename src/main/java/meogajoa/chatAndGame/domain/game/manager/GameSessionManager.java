@@ -1,6 +1,7 @@
 package meogajoa.chatAndGame.domain.game.manager;
 
 import lombok.RequiredArgsConstructor;
+import meogajoa.chatAndGame.common.dto.Message;
 import meogajoa.chatAndGame.domain.game.entity.GameSession;
 import meogajoa.chatAndGame.domain.game.publisher.RedisPubSubGameMessagePublisher;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -42,5 +43,15 @@ public class GameSessionManager {
         });
 
         redisPubSubGameMessagePublisher.publish(gameId);
+    }
+
+    public void addRequest(Message.GameMQRequest request){
+        GameSession gameSession = gameSessionMap.get(request.getGameId());
+        if(gameSession == null){
+            System.out.println("게임이 존재하지 않습니다.");
+            return;
+        }
+
+        gameSession.addRequest(request);
     }
 }
