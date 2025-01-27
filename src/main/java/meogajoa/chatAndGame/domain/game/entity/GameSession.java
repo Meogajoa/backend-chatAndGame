@@ -4,10 +4,12 @@ import meogajoa.chatAndGame.common.dto.Message;
 import meogajoa.chatAndGame.common.model.MessageType;
 import net.bytebuddy.dynamic.scaffold.MethodGraph;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -16,14 +18,32 @@ public class GameSession {
     private final String gameId;
     private final ThreadPoolTaskExecutor executor;
     private final LinkedBlockingQueue<Message.GameMQRequest> requestQueue = new LinkedBlockingQueue<>();
+    private Long dayCount;
+    private String dayOrNight;
+    private MiniGame miniGame;
+    private List<Long> blackTeam;
+    private List<Long> whiteTeam;
+    private Player[] players;
+
 
     private final AtomicBoolean processing = new AtomicBoolean(false);
 
     private volatile boolean isGameRunning = true;
 
-    public GameSession(String gameId, @Qualifier("gameLogicExecutor") ThreadPoolTaskExecutor executor) {
+    public GameSession(String gameId, @Qualifier("gameLogicExecutor") ThreadPoolTaskExecutor executor, List<Player> players) {
         this.gameId = gameId;
         this.executor = executor;
+        this.dayCount = 1L;
+        this.dayOrNight = "DAY";
+        this.players = new Player[10];
+
+        int idx = 1;
+
+        for(Player player : players) {
+            this.players[idx] = player;
+            idx++;
+        }
+
     }
 
     public void addRequest(Message.GameMQRequest request){
@@ -46,7 +66,6 @@ public class GameSession {
                 }
 
                 handleRequest(request);
-
             }
         } catch (InterruptedException e){
             Thread.currentThread().interrupt();
@@ -71,10 +90,11 @@ public class GameSession {
     }
 
     public void startGame() throws InterruptedException {
-        // Game logic
-        for(int i = 1; i <= 10; i++){
-            System.out.println("게임 진행 중: " + i);
-            Thread.sleep(1000);
-        }
+        miniGameAlert();
+    }
+
+    public void miniGameAlert(){
+
+
     }
 }
