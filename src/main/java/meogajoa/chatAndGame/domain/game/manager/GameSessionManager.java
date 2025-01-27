@@ -85,7 +85,7 @@ public class GameSessionManager {
             players.add(player);
         }
 
-        GameSession gameSession = new GameSession(gameId, gameLogicExecutor, players);
+        GameSession gameSession = new GameSession(gameId, gameLogicExecutor, players, redisPubSubGameMessagePublisher);
         gameSessionMap.put(gameId, gameSession);
 
         gameRunningExecutor.submit(() -> {

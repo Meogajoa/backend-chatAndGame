@@ -2,6 +2,7 @@ package meogajoa.chatAndGame.domain.game.entity;
 
 import meogajoa.chatAndGame.common.dto.Message;
 import meogajoa.chatAndGame.common.model.MessageType;
+import meogajoa.chatAndGame.domain.game.publisher.RedisPubSubGameMessagePublisher;
 import net.bytebuddy.dynamic.scaffold.MethodGraph;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -21,21 +22,26 @@ public class GameSession {
     private Long dayCount;
     private String dayOrNight;
     private MiniGame miniGame;
+    private Long surviveCount;
     private List<Long> blackTeam;
     private List<Long> whiteTeam;
     private Player[] players;
+    private final RedisPubSubGameMessagePublisher redisPubSubGameMessagePublisher;
 
 
     private final AtomicBoolean processing = new AtomicBoolean(false);
 
     private volatile boolean isGameRunning = true;
 
-    public GameSession(String gameId, @Qualifier("gameLogicExecutor") ThreadPoolTaskExecutor executor, List<Player> players) {
+    public GameSession(String gameId, @Qualifier("gameLogicExecutor") ThreadPoolTaskExecutor executor, List<Player> players, RedisPubSubGameMessagePublisher redisPubSubGameMessagePublisher) {
         this.gameId = gameId;
         this.executor = executor;
-        this.dayCount = 1L;
-        this.dayOrNight = "DAY";
-        this.players = new Player[10];
+        this.dayCount = 0L;
+        this.dayOrNight = "NIGHT";
+        this.players = new Player[9];
+        this.surviveCount = 8L;
+
+        this.redisPubSubGameMessagePublisher = redisPubSubGameMessagePublisher;
 
         int idx = 1;
 
@@ -90,6 +96,7 @@ public class GameSession {
     }
 
     public void startGame() throws InterruptedException {
+        redisPubSubGameMessagePublisher.broadCastDayNotice(gameId,0, "NIGHT");
         miniGameAlert();
     }
 

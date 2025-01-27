@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import meogajoa.chatAndGame.common.model.MessageType;
 import meogajoa.chatAndGame.domain.chat.dto.ChatLog;
 
+import java.time.LocalDateTime;
+
 public class Message {
 
     @AllArgsConstructor
@@ -38,6 +40,20 @@ public class Message {
                     .build();
         }
     }
+
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Data
+    @Builder
+    public static class GameDayOrNightResponse {
+        private String gameId;
+        private String sender;
+        private MessageType type;
+        private int day;
+        private String dayOrNight;
+        private LocalDateTime sendTime;
+    }
+
 
     @AllArgsConstructor
     @NoArgsConstructor
