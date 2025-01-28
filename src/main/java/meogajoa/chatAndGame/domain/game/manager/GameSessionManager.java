@@ -121,4 +121,14 @@ public class GameSessionManager {
 
         gameSession.publishGameStatus();
     }
+
+    public void publishUserStatus(String gameId, String nickname) {
+        GameSession gameSession = gameSessionMap.get(gameId);
+        if (gameSession == null) {
+            System.out.println("게임이 존재하지 않습니다.");
+            return;
+        }
+
+        gameSession.publishUserStatus(nickname);
+    }
 }

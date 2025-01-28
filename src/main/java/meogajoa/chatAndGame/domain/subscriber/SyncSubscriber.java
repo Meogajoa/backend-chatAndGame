@@ -71,10 +71,6 @@ public class SyncSubscriber {
                 case "TEST":
                     handleTest(record);
                     break;
-                case "GAME_DAY_OR_NIGHT":
-                    gameId = record.getValue().get("gameId");
-                    gameSessionManager.publishGameStatus(gameId);
-                    break;
                 default:
                     break;
             }

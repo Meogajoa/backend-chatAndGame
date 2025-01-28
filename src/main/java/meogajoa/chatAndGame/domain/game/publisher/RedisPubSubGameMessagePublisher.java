@@ -18,6 +18,7 @@ public class RedisPubSubGameMessagePublisher {
     private final ObjectMapper objectMapper;
     private final static String GAME_MESSAGE_KEY = "pubsub:gameStart";
     private final static String GAME_USER_INFO_KEY = "pubsub:userInfo";
+    private final static String GAME_USER_INFO_PERSONAL_KEY = "pubsub:userInfoPersonal";
     private final static String GAME_DAY_OR_NIGHT_KEY = "pubsub:gameDayOrNight";
 
     public void gameStart(String gameId) {
@@ -38,6 +39,15 @@ public class RedisPubSubGameMessagePublisher {
             e.printStackTrace();
         }
     }
+
+//    public void UserInfo(Player player){
+//        try {
+//            String jsonString = objectMapper.writeValueAsString(player);
+//            stringRedisTemplate.convertAndSend(GAME_USER_INFO_PERSONAL_KEY, jsonString);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//    }
 
     public void broadCastDayNotice(String gameId, int day, String dayOrNight) {
         try {

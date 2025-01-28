@@ -7,6 +7,7 @@ import meogajoa.chatAndGame.common.dto.Message;
 import meogajoa.chatAndGame.domain.chat.dto.ChatLog;
 import meogajoa.chatAndGame.domain.chat.publisher.RedisPubSubRoomChatPublisher;
 import meogajoa.chatAndGame.domain.chat.repository.CustomRedisChatLogRepository;
+import meogajoa.chatAndGame.domain.game.manager.GameSessionManager;
 import meogajoa.chatAndGame.domain.room.dto.RoomUserInfo;
 import org.springframework.data.redis.connection.stream.Consumer;
 import org.springframework.data.redis.connection.stream.MapRecord;
@@ -27,6 +28,7 @@ public class AsyncSubscriber {
     private final String GROUP_NAME = "async-consumer-group";
     private final RedisPubSubRoomChatPublisher redisPubSubRoomChatPublisher;
     private final CustomRedisChatLogRepository customRedisChatLogRepository;
+    private final GameSessionManager gameSessionManager;
 
     @PostConstruct
     public void startListening() {
@@ -64,8 +66,22 @@ public class AsyncSubscriber {
                 case "ROOM_CHAT":
                     handleRoomChat(record);;
                     break;
+                case "GAME_MY_INFO":{
+                    String gameId = record.getValue().get("gameId");
+                    String nickname = record.getValue().get("sender");
+                    gameSessionManager.publishUserStatus(gameId, nickname);
+                    break;
+                }
+                case "GAME_DAY_OR_NIGHT": {
+                    String gameId = record.getValue().get("gameId");
+                    gameSessionManager.publishGameStatus(gameId);
+                    break;
+                }
                 default:
             }
+
+            stringRedisTemplate.opsForStream().acknowledge(record.getStream(), GROUP_NAME, record.getId());
+            stringRedisTemplate.opsForStream().delete(record.getStream(), record.getId());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -78,9 +94,6 @@ public class AsyncSubscriber {
             String users = record.getValue().get("users");
 
             RoomUserInfo roomUserInfo = objectMapper.readValue(users, RoomUserInfo.class);
-
-            stringRedisTemplate.opsForStream().acknowledge(record.getStream(), GROUP_NAME, record.getId());
-            stringRedisTemplate.opsForStream().delete(record.getStream(), record.getId());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -100,9 +113,6 @@ public class AsyncSubscriber {
                     .build();
 
             redisPubSubRoomChatPublisher.publish(roomChatPubSubResponse);
-
-            stringRedisTemplate.opsForStream().acknowledge(record.getStream(), GROUP_NAME, record.getId());
-            stringRedisTemplate.opsForStream().delete(record.getStream(), record.getId());
         } catch (Exception e) {
             e.printStackTrace();
         }

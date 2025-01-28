@@ -10,6 +10,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -107,5 +108,17 @@ public class GameSession {
 
     public void publishGameStatus() {
         redisPubSubGameMessagePublisher.broadCastDayNotice(gameId, dayCount.intValue(), dayOrNight);
+    }
+
+    public void publishUserStatus(String nickname) {
+        List<Player> temp = new ArrayList<>();
+        for(int i = 1; i <= 8; i++){
+            if(players[i].getNickname().equals(nickname)){
+                temp.add(players[i]);
+                redisPubSubGameMessagePublisher.UserInfo(temp);
+                System.out.println("유저 List에 포함시켜서 날렸음");
+                break;
+            }
+        }
     }
 }
