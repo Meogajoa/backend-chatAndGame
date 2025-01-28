@@ -104,4 +104,8 @@ public class GameSession {
 
 
     }
+
+    public void publishGameStatus() {
+        redisPubSubGameMessagePublisher.broadCastDayNotice(gameId, dayCount.intValue(), dayOrNight);
+    }
 }

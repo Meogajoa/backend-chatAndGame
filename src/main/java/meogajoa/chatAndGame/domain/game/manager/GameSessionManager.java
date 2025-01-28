@@ -111,4 +111,14 @@ public class GameSessionManager {
 
         gameSession.addRequest(request);
     }
+
+    public void publishGameStatus(String gameId) {
+        GameSession gameSession = gameSessionMap.get(gameId);
+        if (gameSession == null) {
+            System.out.println("게임이 존재하지 않습니다.");
+            return;
+        }
+
+        gameSession.publishGameStatus();
+    }
 }
