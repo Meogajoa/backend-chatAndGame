@@ -4,8 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import meogajoa.chatAndGame.common.dto.Message;
-import meogajoa.chatAndGame.domain.chat.publisher.RedisPubSubRoomChatPublisher;
-import meogajoa.chatAndGame.domain.chat.repository.CustomRedisChatLogRepository;
 import meogajoa.chatAndGame.domain.game.manager.GameSessionManager;
 import org.springframework.data.redis.connection.stream.Consumer;
 import org.springframework.data.redis.connection.stream.MapRecord;
@@ -14,11 +12,6 @@ import org.springframework.data.redis.connection.stream.StreamOffset;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.stream.StreamMessageListenerContainer;
 import org.springframework.stereotype.Service;
-
-import java.util.Deque;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.locks.ReentrantLock;
 
 @Service
 @RequiredArgsConstructor

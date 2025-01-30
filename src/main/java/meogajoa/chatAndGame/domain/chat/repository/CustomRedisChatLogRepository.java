@@ -16,11 +16,12 @@ import java.util.List;
 public class CustomRedisChatLogRepository {
     private final StringRedisTemplate stringRedisTemplate;
     private final static String ROOM_CHAT_LOG_KEY = "chat_log:room:";
+    private final static String GAME_CHAT_LOG_KEY = "chat_log:game:";
     private final static String CHAT_LOG_ID_KEY = "chat_log:id";
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
 
-    public ChatLog saveChatLog(String content, String roomId, String sender) {
+    public ChatLog saveRoomChatLog(String content, String roomId, String sender) {
         Long id = stringRedisTemplate.opsForValue().increment(CHAT_LOG_ID_KEY);
         ChatLog chatLog = ChatLog.builder()
                 .id(String.valueOf(id))
@@ -33,6 +34,23 @@ public class CustomRedisChatLogRepository {
 
         return chatLog;
     }
+
+    public ChatLog saveGameChatLog(String content, String gameId, String sender) {
+        Long id = stringRedisTemplate.opsForValue().increment(CHAT_LOG_ID_KEY);
+        ChatLog chatLog = ChatLog.builder()
+                .id(String.valueOf(id))
+                .content(content)
+                .sender(sender)
+                .sendTime(LocalDateTime.now())
+                .build();
+
+        redisTemplate.opsForList().rightPush(GAME_CHAT_LOG_KEY + gameId, chatLog);
+
+        return chatLog;
+
+    }
+
+
 
     public List<ChatLog> getRoomChatLogs(String roomId) {
         List<Object> list = redisTemplate.opsForList().range(ROOM_CHAT_LOG_KEY + roomId, 0, -1);

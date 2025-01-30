@@ -5,7 +5,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import meogajoa.chatAndGame.common.dto.Message;
 import meogajoa.chatAndGame.domain.chat.dto.ChatLog;
-import meogajoa.chatAndGame.domain.chat.publisher.RedisPubSubRoomChatPublisher;
+import meogajoa.chatAndGame.domain.chat.publisher.RedisPubSubChatPublisher;
 import meogajoa.chatAndGame.domain.chat.repository.CustomRedisChatLogRepository;
 import meogajoa.chatAndGame.domain.game.manager.GameSessionManager;
 import meogajoa.chatAndGame.domain.room.dto.RoomUserInfo;
@@ -26,7 +26,7 @@ public class AsyncSubscriber {
     private final ObjectMapper objectMapper;
     private final String ASYNC_STREAM_KEY = "stream:async:";
     private final String GROUP_NAME = "async-consumer-group";
-    private final RedisPubSubRoomChatPublisher redisPubSubRoomChatPublisher;
+    private final RedisPubSubChatPublisher redisPubSubChatPublisher;
     private final CustomRedisChatLogRepository customRedisChatLogRepository;
     private final GameSessionManager gameSessionManager;
 
@@ -64,7 +64,10 @@ public class AsyncSubscriber {
                     handleRoomInfoMessage(record);
                     break;
                 case "ROOM_CHAT":
-                    handleRoomChat(record);;
+                    handleRoomChat(record);
+                    break;
+                case "GAME_CHAT":
+                    handleGameChat(record);
                     break;
                 case "GAME_MY_INFO":{
                     String gameId = record.getValue().get("gameId");
@@ -101,18 +104,37 @@ public class AsyncSubscriber {
 
     public void handleRoomChat(MapRecord<String, String, String> record) {
         try {
-            String roomId = record.getValue().get("roomId");
+            String id = record.getValue().get("id");
             String content = record.getValue().get("content");
             String sender = record.getValue().get("sender");
 
-            ChatLog chatLog = customRedisChatLogRepository.saveChatLog(content, roomId, sender);
+            ChatLog chatLog = customRedisChatLogRepository.saveRoomChatLog(content, id, sender);
 
-            Message.RoomChatPubSubResponse roomChatPubSubResponse = Message.RoomChatPubSubResponse.builder()
-                    .id(roomId)
+            Message.ChatPubSubResponse chatPubSubResponse = Message.ChatPubSubResponse.builder()
+                    .id(id)
                     .chatLog(chatLog)
                     .build();
 
-            redisPubSubRoomChatPublisher.publish(roomChatPubSubResponse);
+            redisPubSubChatPublisher.publishToRoom(chatPubSubResponse);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void handleGameChat(MapRecord<String, String, String> record) {
+        try {
+            String id = record.getValue().get("id");
+            String content = record.getValue().get("content");
+            String sender = record.getValue().get("sender");
+
+            ChatLog chatLog = customRedisChatLogRepository.saveGameChatLog(content, id, sender);
+
+            Message.ChatPubSubResponse chatPubSubResponse = Message.ChatPubSubResponse.builder()
+                    .id(id)
+                    .chatLog(chatLog)
+                    .build();
+
+            redisPubSubChatPublisher.publishToGame(chatPubSubResponse);
         } catch (Exception e) {
             e.printStackTrace();
         }

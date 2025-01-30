@@ -59,12 +59,12 @@ public class Message {
     @NoArgsConstructor
     @Data
     @Builder
-    public static class RoomChatPubSubResponse {
+    public static class ChatPubSubResponse {
         String id;
         ChatLog chatLog;
 
-        public static RoomChatPubSubResponse of(String id, ChatLog chatLog) {
-            return RoomChatPubSubResponse.builder()
+        public static ChatPubSubResponse of(String id, ChatLog chatLog) {
+            return ChatPubSubResponse.builder()
                     .id(id)
                     .chatLog(chatLog)
                     .build();
