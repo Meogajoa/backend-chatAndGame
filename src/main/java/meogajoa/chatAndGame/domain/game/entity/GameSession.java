@@ -6,6 +6,7 @@ import meogajoa.chatAndGame.common.model.MessageType;
 import meogajoa.chatAndGame.domain.game.model.MiniGameType;
 import meogajoa.chatAndGame.domain.game.publisher.RedisPubSubGameMessagePublisher;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.time.LocalDateTime;
@@ -51,7 +52,6 @@ public class GameSession {
             this.players[idx] = player;
             idx++;
         }
-
     }
 
     public void addRequest(MeogajoaMessage.GameMQRequest request){
@@ -65,22 +65,22 @@ public class GameSession {
         }
     }
 
-    private void processRequest(){
-        try{
-            while(isGameRunning){
+    private void processRequest() {
+        try {
+            while (isGameRunning) {
                 MeogajoaMessage.GameMQRequest request = requestQueue.poll(500, TimeUnit.MILLISECONDS);
-                if(request == null) {
+                if (request == null) {
                     break;
                 }
 
                 handleRequest(request);
             }
-        } catch (InterruptedException e){
+        } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } finally {
             processing.set(false);
 
-            if(isGameRunning && !requestQueue.isEmpty()){
+            if (isGameRunning && !requestQueue.isEmpty()) {
                 triggerProcessingIfNeeded();
             }
         }
@@ -98,11 +98,13 @@ public class GameSession {
     }
 
     public void startGame() throws JsonProcessingException {
-        redisPubSubGameMessagePublisher.broadCastDayNotice(id, 0, "NIGHT");
+        //redisPubSubGameMessagePublisher.broadCastUserInfoList(players);
+        redisPubSubGameMessagePublisher.broadCastDayNotice(id, 0L, "NIGHT");
 
         ZonedDateTime targetTime = ZonedDateTime.now(ZoneOffset.UTC).plusSeconds(20);
 
-        redisPubSubGameMessagePublisher.broadCastNextMiniGameNotice(targetTime, MiniGameType.BUTTON_CLICK, id);
+        redisPubSubGameMessagePublisher.broadCastMiniGameStartNotice(targetTime, MiniGameType.BUTTON_CLICK, id);
+        this.miniGame = new ButtonGame(redisPubSubGameMessagePublisher, id);
 
         while (true) {
             ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
@@ -118,16 +120,63 @@ public class GameSession {
             }
         }
 
-        //startMinigame(MiniGame.);
+        this.dayCount++; dayOrNight = "DAY";
+        redisPubSubGameMessagePublisher.broadCastDayNotice(id, this.dayCount, dayOrNight);
+        redisPubSubGameMessagePublisher.broadCastMiniGameEndNotice(targetTime, MiniGameType.BUTTON_CLICK, id);
+
+        targetTime = ZonedDateTime.now(ZoneOffset.UTC).plusSeconds(30);
+        ZonedDateTime blindTime = ZonedDateTime.now(ZoneOffset.UTC).plusSeconds(20);
+        this.miniGame.publishCurrentStatus();
+
+        while (true) {
+            ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+            if (!now.isBefore(blindTime)) {
+                break;
+            }
+
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+
+        this.miniGame.setBlind(true);
+        this.miniGame.publishCurrentStatus();
+
+        while (true) {
+            ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+            if (!now.isBefore(targetTime)) {
+                break;
+            }
+
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+
+        System.out.println("게임이 끝났습니다.");
+
+
     }
 
-    public void miniGameAlert(){
+    public void startMiniGame(MiniGameType miniGameType){
+        switch(miniGameType){
+            case BUTTON_CLICK:
 
 
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid mini game type: " + miniGameType);
+        }
     }
 
     public void publishGameStatus() {
-        redisPubSubGameMessagePublisher.broadCastDayNotice(id, dayCount.intValue(), dayOrNight);
+        redisPubSubGameMessagePublisher.broadCastDayNotice(id, dayCount, dayOrNight);
     }
 
     public void publishUserStatus(String nickname) {

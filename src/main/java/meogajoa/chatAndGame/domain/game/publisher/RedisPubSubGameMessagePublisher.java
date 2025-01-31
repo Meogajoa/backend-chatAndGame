@@ -19,15 +19,17 @@ import java.util.List;
 public class RedisPubSubGameMessagePublisher {
     private final StringRedisTemplate stringRedisTemplate;
     private final ObjectMapper objectMapper;
-    private final static String GAME_MESSAGE_KEY = "pubsub:gameStart";
+    private final static String GAME_START_MESSAGE_KEY = "pubsub:gameStart";
     private final static String GAME_USER_INFO_KEY = "pubsub:userInfo";
     private final static String GAME_USER_INFO_PERSONAL_KEY = "pubsub:userInfoPersonal";
     private final static String GAME_DAY_OR_NIGHT_KEY = "pubsub:gameDayOrNight";
     private final static String GAME_MINI_GAME_NOTICE_KEY = "pubsub:miniGameNotice";
+    private final static String BUTTON_GAME_STATUS_KEY = "pubsub:buttonGameStatus";
 
-    public void gameStart(String gameId) {
+    public void gameStart(MeogajoaMessage.GameSystemResponse gameSystemResponse) {
         try {
-            stringRedisTemplate.convertAndSend(GAME_MESSAGE_KEY, gameId);
+            String jsonString = objectMapper.writeValueAsString(gameSystemResponse);
+            stringRedisTemplate.convertAndSend(GAME_START_MESSAGE_KEY, jsonString);
             System.out.println("게임 시작 메시지를 보냈습니다.");
         } catch (Exception e) {
             e.printStackTrace();
@@ -53,7 +55,7 @@ public class RedisPubSubGameMessagePublisher {
 //        }
 //    }
 
-    public void broadCastDayNotice(String gameId, int day, String dayOrNight) {
+    public void broadCastDayNotice(String gameId, Long day, String dayOrNight) {
         try {
             MeogajoaMessage.GameDayOrNightResponse gameDayOrNightResponse = MeogajoaMessage.GameDayOrNightResponse.builder()
                     .gameId(gameId)
@@ -73,10 +75,10 @@ public class RedisPubSubGameMessagePublisher {
         }
     }
 
-    public void broadCastNextMiniGameNotice(ZonedDateTime targetTime, MiniGameType miniGameType, String id) throws JsonProcessingException {
+    public void broadCastMiniGameStartNotice(ZonedDateTime targetTime, MiniGameType miniGameType, String id) throws JsonProcessingException {
         MeogajoaMessage.MiniGameNoticeResponse miniGameNoticeResponse = MeogajoaMessage.MiniGameNoticeResponse.builder()
                 .id(id)
-                .type(MessageType.MINI_GAME_NOTICE)
+                .type(MessageType.MINI_GAME_WILL_START_NOTICE)
                 .miniGameType(miniGameType.name())
                 .scheduledTime(targetTime.toString())
                 .sender("SYSTEM")
@@ -87,4 +89,40 @@ public class RedisPubSubGameMessagePublisher {
 
         stringRedisTemplate.convertAndSend(GAME_MINI_GAME_NOTICE_KEY, jsonString);
     }
+
+    public void broadCastMiniGameEndNotice(ZonedDateTime targetTime, MiniGameType miniGameType, String id) throws JsonProcessingException {
+        MeogajoaMessage.MiniGameNoticeResponse miniGameNoticeResponse = MeogajoaMessage.MiniGameNoticeResponse.builder()
+                .id(id)
+                .type(MessageType.MINI_GAME_WILL_END_NOTICE)
+                .miniGameType(miniGameType.name())
+                .scheduledTime(targetTime.toString())
+                .sender("SYSTEM")
+                .sendTime(LocalDateTime.now())
+                .build();
+
+        String jsonString = objectMapper.writeValueAsString(miniGameNoticeResponse);
+
+        stringRedisTemplate.convertAndSend(GAME_MINI_GAME_NOTICE_KEY, jsonString);
+    }
+
+    public void publishButtonGameStatus(List<Long> twentyButtons, List<Long> fiftyButtons, List<Long> hundredButtons, String gameId) {
+        try {
+            MeogajoaMessage.ButtonGameStatusResponse buttonGameStatusResponse = MeogajoaMessage.ButtonGameStatusResponse.builder()
+                    .id(gameId)
+                    .type(MessageType.BUTTON_GAME_STATUS)
+                    .sender("SYSTEM")
+                    .twentyButtons(twentyButtons)
+                    .fiftyButtons(fiftyButtons)
+                    .hundredButtons(hundredButtons)
+                    .build();
+
+            String jsonString = objectMapper.writeValueAsString(buttonGameStatusResponse);
+
+            stringRedisTemplate.convertAndSend(BUTTON_GAME_STATUS_KEY, jsonString);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+    }
+
+
 }

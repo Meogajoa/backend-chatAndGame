@@ -9,6 +9,7 @@ import meogajoa.chatAndGame.common.model.MessageType;
 import meogajoa.chatAndGame.domain.chat.dto.ChatLog;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class MeogajoaMessage {
 
@@ -62,7 +63,7 @@ public class MeogajoaMessage {
         private String gameId;
         private String sender;
         private MessageType type;
-        private int day;
+        private Long day;
         private String dayOrNight;
         private LocalDateTime sendTime;
     }
@@ -93,6 +94,31 @@ public class MeogajoaMessage {
         private String gameId;
         private String sender;
         private String content;
+    }
+
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Data
+    @Builder
+    public static class ButtonGameStatusResponse {
+        private MessageType type;
+        private String id;
+        private String sender;
+        private List<Long> twentyButtons;
+        private List<Long> fiftyButtons;
+        private List<Long> hundredButtons;
+    }
+
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Data
+    @Builder
+    public static class GameSystemResponse {
+        private String sender;
+        private String id;
+        private MessageType type;
+        private String content;
+        private LocalDateTime sendTime;
     }
 
     @AllArgsConstructor

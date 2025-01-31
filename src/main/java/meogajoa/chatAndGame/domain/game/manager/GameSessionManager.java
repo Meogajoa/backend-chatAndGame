@@ -2,6 +2,7 @@ package meogajoa.chatAndGame.domain.game.manager;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import meogajoa.chatAndGame.common.dto.MeogajoaMessage;
+import meogajoa.chatAndGame.common.model.MessageType;
 import meogajoa.chatAndGame.domain.game.entity.GameSession;
 import meogajoa.chatAndGame.domain.game.entity.Player;
 import meogajoa.chatAndGame.domain.game.model.TeamColor;
@@ -11,6 +12,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -101,7 +103,14 @@ public class GameSessionManager {
 
         redisPubSubGameMessagePublisher.UserInfo(players);
 
-        redisPubSubGameMessagePublisher.gameStart(gameId);
+        MeogajoaMessage.GameSystemResponse gameSystemResponse = MeogajoaMessage.GameSystemResponse.builder()
+                .sendTime(LocalDateTime.now())
+                .type(MessageType.GAME_START)
+                .content(gameId)
+                .sender("SYSTEM")
+                .build();
+
+        redisPubSubGameMessagePublisher.gameStart(gameSystemResponse);
     }
 
     public void addRequest(MeogajoaMessage.GameMQRequest request) {
