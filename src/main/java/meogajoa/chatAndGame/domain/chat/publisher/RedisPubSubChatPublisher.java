@@ -2,7 +2,7 @@ package meogajoa.chatAndGame.domain.chat.publisher;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
-import meogajoa.chatAndGame.common.dto.Message;
+import meogajoa.chatAndGame.common.dto.MeogajoaMessage;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -12,7 +12,7 @@ public class RedisPubSubChatPublisher {
 
     private final StringRedisTemplate stringRedisTemplate;
     private final ObjectMapper objectMapper;
-    public void publishToRoom(Message.ChatPubSubResponse chatPubSubResponse) {
+    public void publishToRoom(MeogajoaMessage.ChatPubSubResponse chatPubSubResponse) {
         try {
             String jsonString = objectMapper.writeValueAsString(chatPubSubResponse);
 
@@ -22,7 +22,7 @@ public class RedisPubSubChatPublisher {
         }
     }
 
-    public void publishToGame(Message.ChatPubSubResponse chatPubSubResponse) {
+    public void publishToGame(MeogajoaMessage.ChatPubSubResponse chatPubSubResponse) {
         try {
             String jsonString = objectMapper.writeValueAsString(chatPubSubResponse);
 

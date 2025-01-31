@@ -1,15 +1,16 @@
 package meogajoa.chatAndGame.domain.game.entity;
 
-import meogajoa.chatAndGame.common.dto.Message;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import meogajoa.chatAndGame.common.dto.MeogajoaMessage;
 import meogajoa.chatAndGame.common.model.MessageType;
+import meogajoa.chatAndGame.domain.game.model.MiniGameType;
 import meogajoa.chatAndGame.domain.game.publisher.RedisPubSubGameMessagePublisher;
-import net.bytebuddy.dynamic.scaffold.MethodGraph;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -17,9 +18,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class GameSession {
-    private final String gameId;
+    private final String id;
     private final ThreadPoolTaskExecutor executor;
-    private final LinkedBlockingQueue<Message.GameMQRequest> requestQueue = new LinkedBlockingQueue<>();
+    private final LinkedBlockingQueue<MeogajoaMessage.GameMQRequest> requestQueue = new LinkedBlockingQueue<>();
     private Long dayCount;
     private String dayOrNight;
     private MiniGame miniGame;
@@ -34,8 +35,8 @@ public class GameSession {
 
     private volatile boolean isGameRunning = true;
 
-    public GameSession(String gameId, @Qualifier("gameLogicExecutor") ThreadPoolTaskExecutor executor, List<Player> players, RedisPubSubGameMessagePublisher redisPubSubGameMessagePublisher) {
-        this.gameId = gameId;
+    public GameSession(String id, @Qualifier("gameLogicExecutor") ThreadPoolTaskExecutor executor, List<Player> players, RedisPubSubGameMessagePublisher redisPubSubGameMessagePublisher) {
+        this.id = id;
         this.executor = executor;
         this.dayCount = 0L;
         this.dayOrNight = "NIGHT";
@@ -53,7 +54,7 @@ public class GameSession {
 
     }
 
-    public void addRequest(Message.GameMQRequest request){
+    public void addRequest(MeogajoaMessage.GameMQRequest request){
         requestQueue.add(request);
         triggerProcessingIfNeeded();
     }
@@ -67,7 +68,7 @@ public class GameSession {
     private void processRequest(){
         try{
             while(isGameRunning){
-                Message.GameMQRequest request = requestQueue.poll(500, TimeUnit.MILLISECONDS);
+                MeogajoaMessage.GameMQRequest request = requestQueue.poll(500, TimeUnit.MILLISECONDS);
                 if(request == null) {
                     break;
                 }
@@ -85,7 +86,7 @@ public class GameSession {
         }
     }
 
-    private void handleRequest(Message.GameMQRequest request){
+    private void handleRequest(MeogajoaMessage.GameMQRequest request){
         if(request.getType() == MessageType.TEST){
             System.out.println(LocalDateTime.now() + "에 보냈어요!!!: ");
         }
@@ -96,9 +97,28 @@ public class GameSession {
         requestQueue.clear();
     }
 
-    public void startGame() throws InterruptedException {
-        redisPubSubGameMessagePublisher.broadCastDayNotice(gameId,0, "NIGHT");
-        miniGameAlert();
+    public void startGame() throws JsonProcessingException {
+        redisPubSubGameMessagePublisher.broadCastDayNotice(id, 0, "NIGHT");
+
+        ZonedDateTime targetTime = ZonedDateTime.now(ZoneOffset.UTC).plusSeconds(20);
+
+        redisPubSubGameMessagePublisher.broadCastNextMiniGameNotice(targetTime, MiniGameType.BUTTON_CLICK, id);
+
+        while (true) {
+            ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+            if (!now.isBefore(targetTime)) {
+                break;
+            }
+
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+
+        //startMinigame(MiniGame.);
     }
 
     public void miniGameAlert(){
@@ -107,7 +127,7 @@ public class GameSession {
     }
 
     public void publishGameStatus() {
-        redisPubSubGameMessagePublisher.broadCastDayNotice(gameId, dayCount.intValue(), dayOrNight);
+        redisPubSubGameMessagePublisher.broadCastDayNotice(id, dayCount.intValue(), dayOrNight);
     }
 
     public void publishUserStatus(String nickname) {

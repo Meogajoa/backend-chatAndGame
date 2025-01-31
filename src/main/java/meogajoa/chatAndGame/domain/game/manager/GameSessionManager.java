@@ -1,6 +1,7 @@
 package meogajoa.chatAndGame.domain.game.manager;
 
-import meogajoa.chatAndGame.common.dto.Message;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import meogajoa.chatAndGame.common.dto.MeogajoaMessage;
 import meogajoa.chatAndGame.domain.game.entity.GameSession;
 import meogajoa.chatAndGame.domain.game.entity.Player;
 import meogajoa.chatAndGame.domain.game.model.TeamColor;
@@ -43,6 +44,8 @@ public class GameSessionManager {
         String nicknameKey = "room:" + gameId + ":users";
 
         Set<String> members = stringRedisTemplate.opsForSet().members(nicknameKey);
+        stringRedisTemplate.opsForHash().entries("room:" + gameId);
+
         if (members == null || members.size() < 8) {
             System.out.println("게임 참가 인원이 부족합니다.");
             return;
@@ -91,9 +94,8 @@ public class GameSessionManager {
         gameRunningExecutor.submit(() -> {
             try {
                 gameSession.startGame();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                Thread.currentThread().interrupt();
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
             }
         });
 
@@ -102,7 +104,7 @@ public class GameSessionManager {
         redisPubSubGameMessagePublisher.gameStart(gameId);
     }
 
-    public void addRequest(Message.GameMQRequest request) {
+    public void addRequest(MeogajoaMessage.GameMQRequest request) {
         GameSession gameSession = gameSessionMap.get(request.getGameId());
         if (gameSession == null) {
             System.out.println("게임이 존재하지 않습니다.");

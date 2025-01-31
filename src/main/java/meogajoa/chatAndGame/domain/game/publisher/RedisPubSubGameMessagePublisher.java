@@ -1,14 +1,17 @@
 package meogajoa.chatAndGame.domain.game.publisher;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
-import meogajoa.chatAndGame.common.dto.Message;
+import meogajoa.chatAndGame.common.dto.MeogajoaMessage;
 import meogajoa.chatAndGame.common.model.MessageType;
 import meogajoa.chatAndGame.domain.game.entity.Player;
+import meogajoa.chatAndGame.domain.game.model.MiniGameType;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 @Service
@@ -20,6 +23,7 @@ public class RedisPubSubGameMessagePublisher {
     private final static String GAME_USER_INFO_KEY = "pubsub:userInfo";
     private final static String GAME_USER_INFO_PERSONAL_KEY = "pubsub:userInfoPersonal";
     private final static String GAME_DAY_OR_NIGHT_KEY = "pubsub:gameDayOrNight";
+    private final static String GAME_MINI_GAME_NOTICE_KEY = "pubsub:miniGameNotice";
 
     public void gameStart(String gameId) {
         try {
@@ -51,7 +55,7 @@ public class RedisPubSubGameMessagePublisher {
 
     public void broadCastDayNotice(String gameId, int day, String dayOrNight) {
         try {
-            Message.GameDayOrNightResponse gameDayOrNightResponse = Message.GameDayOrNightResponse.builder()
+            MeogajoaMessage.GameDayOrNightResponse gameDayOrNightResponse = MeogajoaMessage.GameDayOrNightResponse.builder()
                     .gameId(gameId)
                     .sender("SYSTEM")
                     .sendTime(LocalDateTime.now())
@@ -67,5 +71,20 @@ public class RedisPubSubGameMessagePublisher {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public void broadCastNextMiniGameNotice(ZonedDateTime targetTime, MiniGameType miniGameType, String id) throws JsonProcessingException {
+        MeogajoaMessage.MiniGameNoticeResponse miniGameNoticeResponse = MeogajoaMessage.MiniGameNoticeResponse.builder()
+                .id(id)
+                .type(MessageType.MINI_GAME_NOTICE)
+                .miniGameType(miniGameType.name())
+                .scheduledTime(targetTime.toString())
+                .sender("SYSTEM")
+                .sendTime(LocalDateTime.now())
+                .build();
+
+        String jsonString = objectMapper.writeValueAsString(miniGameNoticeResponse);
+
+        stringRedisTemplate.convertAndSend(GAME_MINI_GAME_NOTICE_KEY, jsonString);
     }
 }

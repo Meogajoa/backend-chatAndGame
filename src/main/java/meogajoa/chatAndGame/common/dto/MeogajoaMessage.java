@@ -10,7 +10,7 @@ import meogajoa.chatAndGame.domain.chat.dto.ChatLog;
 
 import java.time.LocalDateTime;
 
-public class Message {
+public class MeogajoaMessage {
 
     @AllArgsConstructor
     @NoArgsConstructor
@@ -25,13 +25,26 @@ public class Message {
     @NoArgsConstructor
     @Data
     @Builder
+    public static class MiniGameNoticeResponse {
+        private MessageType type;
+        private String id;
+        private String miniGameType;
+        private String scheduledTime;
+        private String sender;
+        private LocalDateTime sendTime;
+    }
+
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Data
+    @Builder
     public static class RoomChatMQRequest {
         private MessageType type;
         private String roomId;
         private String content;
         private String sender;
 
-        public static RoomChatMQRequest of(Message.Request request, String roomId, String sender) {
+        public static RoomChatMQRequest of(MeogajoaMessage.Request request, String roomId, String sender) {
             return RoomChatMQRequest.builder()
                     .type(request.getType())
                     .roomId(roomId)

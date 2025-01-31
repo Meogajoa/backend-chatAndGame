@@ -10,7 +10,9 @@ public enum MessageType {
     GAME_START("GAME_START"),
     TEST("TEST"),
     GAME_DAY_OR_NIGHT("GAME_DAY_OR_NIGHT"),
+    MINI_GAME_NOTICE("MINI_GAME_NOTICE"),
     GAME_END("GAME_END");
+
 
     private final String value;
 

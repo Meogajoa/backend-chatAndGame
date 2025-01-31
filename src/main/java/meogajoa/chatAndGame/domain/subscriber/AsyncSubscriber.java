@@ -3,7 +3,7 @@ package meogajoa.chatAndGame.domain.subscriber;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
-import meogajoa.chatAndGame.common.dto.Message;
+import meogajoa.chatAndGame.common.dto.MeogajoaMessage;
 import meogajoa.chatAndGame.domain.chat.dto.ChatLog;
 import meogajoa.chatAndGame.domain.chat.publisher.RedisPubSubChatPublisher;
 import meogajoa.chatAndGame.domain.chat.repository.CustomRedisChatLogRepository;
@@ -110,7 +110,7 @@ public class AsyncSubscriber {
 
             ChatLog chatLog = customRedisChatLogRepository.saveRoomChatLog(content, id, sender);
 
-            Message.ChatPubSubResponse chatPubSubResponse = Message.ChatPubSubResponse.builder()
+            MeogajoaMessage.ChatPubSubResponse chatPubSubResponse = MeogajoaMessage.ChatPubSubResponse.builder()
                     .id(id)
                     .chatLog(chatLog)
                     .build();
@@ -129,7 +129,7 @@ public class AsyncSubscriber {
 
             ChatLog chatLog = customRedisChatLogRepository.saveGameChatLog(content, id, sender);
 
-            Message.ChatPubSubResponse chatPubSubResponse = Message.ChatPubSubResponse.builder()
+            MeogajoaMessage.ChatPubSubResponse chatPubSubResponse = MeogajoaMessage.ChatPubSubResponse.builder()
                     .id(id)
                     .chatLog(chatLog)
                     .build();

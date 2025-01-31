@@ -3,7 +3,7 @@ package meogajoa.chatAndGame.domain.subscriber;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
-import meogajoa.chatAndGame.common.dto.Message;
+import meogajoa.chatAndGame.common.dto.MeogajoaMessage;
 import meogajoa.chatAndGame.domain.game.manager.GameSessionManager;
 import org.springframework.data.redis.connection.stream.Consumer;
 import org.springframework.data.redis.connection.stream.MapRecord;
@@ -78,7 +78,7 @@ public class SyncSubscriber {
     }
 
     public void handleTest(MapRecord<String, String, String> record) {
-        Message.GameMQRequest request = objectMapper.convertValue(record.getValue(), Message.GameMQRequest.class);
+        MeogajoaMessage.GameMQRequest request = objectMapper.convertValue(record.getValue(), MeogajoaMessage.GameMQRequest.class);
         gameSessionManager.addRequest(request);
     }
 
