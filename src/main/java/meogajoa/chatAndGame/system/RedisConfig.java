@@ -8,37 +8,29 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
-import org.springframework.data.redis.connection.stream.MapRecord;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
-import org.springframework.data.redis.stream.StreamMessageListenerContainer;
-
-import java.time.Duration;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 @Configuration
 @RequiredArgsConstructor
 public class RedisConfig {
 
     private final ObjectMapper objectMapper;
-
     @Value("${spring.data.redis.host}")
     private String host;
 
     @Value("${spring.data.redis.port}")
     private int port;
 
-    @Bean("virtualThreadExecutor")
-    public Executor virtualThreadExecutor() {
-        return Executors.newThreadPerTaskExecutor(
-                Thread.ofVirtual().name("redis-listener-%d").factory()
-        );
+    @Bean
+    public ReactiveRedisConnectionFactory reactiveRedisConnectionFactory() {
+        RedisStandaloneConfiguration redisConfig = new RedisStandaloneConfiguration("localhost", 6379);
+        return new LettuceConnectionFactory(redisConfig);
     }
 
 
@@ -69,25 +61,7 @@ public class RedisConfig {
         return template;
     }
 
-    @Bean
-    public StreamMessageListenerContainer<String, MapRecord<String, String, String>> streamMessageListenerContainer(
-            RedisConnectionFactory connectionFactory) {
 
-        StringRedisSerializer serializer = new StringRedisSerializer();
-
-        StreamMessageListenerContainer.StreamMessageListenerContainerOptions<String, MapRecord<String, String, String>> options =
-                StreamMessageListenerContainer.StreamMessageListenerContainerOptions
-                        .builder()
-                        .executor(virtualThreadExecutor())
-                        .pollTimeout(Duration.ofSeconds(2))
-                        .serializer(serializer)
-                        .build();
-
-
-        StreamMessageListenerContainer<String, MapRecord<String, String, String>> container = StreamMessageListenerContainer.create(connectionFactory, options);
-        container.start();
-        return container;
-    }
 
 
 
