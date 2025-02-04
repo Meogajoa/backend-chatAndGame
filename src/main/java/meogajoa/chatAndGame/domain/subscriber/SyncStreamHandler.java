@@ -35,6 +35,11 @@ public class SyncStreamHandler {
                 case "TEST":
                     handleTest(record);
                     break;
+                case "BUTTON_CLICK":{
+                    MeogajoaMessage.GameMQRequest gameMQRequest = objectMapper.convertValue(record.getValue(), MeogajoaMessage.GameMQRequest.class);
+                    gameSessionManager.addRequest(gameMQRequest);
+                }
+
                 default:
                     break;
             }

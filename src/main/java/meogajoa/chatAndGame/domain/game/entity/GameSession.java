@@ -13,7 +13,9 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -28,15 +30,16 @@ public class GameSession {
     private Long surviveCount;
     private List<Long> blackTeam;
     private List<Long> whiteTeam;
+    private Map<String, Long> nicknameToPlayerNumber;
     private Player[] players;
     private final RedisPubSubGameMessagePublisher redisPubSubGameMessagePublisher;
 
 
-    private final AtomicBoolean processing = new AtomicBoolean(false);
+    private AtomicBoolean processing = new AtomicBoolean(false);
 
     private volatile boolean isGameRunning = true;
 
-    public GameSession(String id, @Qualifier("gameLogicExecutor") ThreadPoolTaskExecutor executor, List<Player> players, RedisPubSubGameMessagePublisher redisPubSubGameMessagePublisher) {
+    public GameSession(String id, @Qualifier("gameLogicExecutor") ThreadPoolTaskExecutor executor, List<Player> players, RedisPubSubGameMessagePublisher redisPubSubGameMessagePublisher, Map<String, Long> nicknameToPlayerNumber) {
         this.id = id;
         this.executor = executor;
         this.dayCount = 0L;
@@ -45,6 +48,7 @@ public class GameSession {
         this.surviveCount = 8L;
 
         this.redisPubSubGameMessagePublisher = redisPubSubGameMessagePublisher;
+        this.nicknameToPlayerNumber = nicknameToPlayerNumber;
 
         int idx = 1;
 
@@ -73,7 +77,17 @@ public class GameSession {
                     break;
                 }
 
-                handleRequest(request);
+                if(request.getType().equals(MessageType.BUTTON_CLICK) && this.miniGame instanceof ButtonGame){
+                    if(request.getContent().equals("twenty")){
+                        this.miniGame.clickButton(nicknameToPlayerNumber.get(request.getSender()), request.getContent());
+                    } else if(request.getContent().equals("fifty")){
+                        this.miniGame.clickButton(nicknameToPlayerNumber.get(request.getSender()), request.getContent());
+                    } else if(request.getContent().equals("hundred")){
+                        this.miniGame.clickButton(nicknameToPlayerNumber.get(request.getSender()), request.getContent());
+                    } else {
+                        System.out.println("잘못된 버튼 클릭입니다.");
+                    }
+                }
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -142,7 +156,7 @@ public class GameSession {
             }
         }
 
-        this.miniGame.setBlind(true);
+        //this.miniGame.setBlind(true);
         this.miniGame.publishCurrentStatus();
 
         while (true) {

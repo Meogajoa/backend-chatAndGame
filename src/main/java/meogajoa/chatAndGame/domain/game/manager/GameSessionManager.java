@@ -90,7 +90,12 @@ public class GameSessionManager {
             players.add(player);
         }
 
-        GameSession gameSession = new GameSession(gameId, gameLogicExecutor, players, redisPubSubGameMessagePublisher);
+        Map<String, Long> nicknameToPlayerNumber = new HashMap<>();
+        for (Player player : players) {
+            nicknameToPlayerNumber.put(player.getNickname(), player.getNumber());
+        }
+
+        GameSession gameSession = new GameSession(gameId, gameLogicExecutor, players, redisPubSubGameMessagePublisher, nicknameToPlayerNumber);
         gameSessionMap.put(gameId, gameSession);
 
         gameRunningExecutor.submit(() -> {

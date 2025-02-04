@@ -3,6 +3,9 @@ package meogajoa.chatAndGame.system;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import io.lettuce.core.resource.ClientResources;
+import io.lettuce.core.resource.DefaultClientResources;
+import io.lettuce.core.resource.DefaultEventLoopGroupProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -11,6 +14,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
@@ -27,10 +31,21 @@ public class RedisConfig {
     @Value("${spring.data.redis.port}")
     private int port;
 
+    @Bean(destroyMethod = "shutdown")
+    public ClientResources clientResources() {
+        return DefaultClientResources.builder()
+                .eventLoopGroupProvider(new DefaultEventLoopGroupProvider(1))
+                .build();
+    }
+
     @Bean
-    public ReactiveRedisConnectionFactory reactiveRedisConnectionFactory() {
+    public ReactiveRedisConnectionFactory reactiveRedisConnectionFactory(ClientResources clientResources) {
         RedisStandaloneConfiguration redisConfig = new RedisStandaloneConfiguration("localhost", 6379);
-        return new LettuceConnectionFactory(redisConfig);
+
+        LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
+                .clientResources(clientResources)
+                .build();
+        return new LettuceConnectionFactory(redisConfig, clientConfig);
     }
 
 
