@@ -7,6 +7,11 @@ import meogajoa.chatAndGame.domain.game.entity.GameSession;
 import meogajoa.chatAndGame.domain.game.entity.Player;
 import meogajoa.chatAndGame.domain.game.model.TeamColor;
 import meogajoa.chatAndGame.domain.game.publisher.RedisPubSubGameMessagePublisher;
+import meogajoa.chatAndGame.domain.room.entity.Room;
+import meogajoa.chatAndGame.domain.room.repository.CustomRedisRoomRepository;
+import meogajoa.chatAndGame.domain.room.repository.RedisRoomRepository;
+import meogajoa.chatAndGame.domain.session.repository.CustomRedisSessionRepository;
+import meogajoa.chatAndGame.domain.session.state.State;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -21,20 +26,27 @@ import java.util.concurrent.atomic.AtomicLong;
 public class GameSessionManager {
     private final ConcurrentHashMap<String, GameSession> gameSessionMap = new ConcurrentHashMap<>();
     private final RedisPubSubGameMessagePublisher redisPubSubGameMessagePublisher;
+    private final CustomRedisSessionRepository customRedisSessionRepository;
     private final ThreadPoolTaskExecutor gameRunningExecutor;
     private final ThreadPoolTaskExecutor gameLogicExecutor;
     private final StringRedisTemplate stringRedisTemplate;
     private final AtomicLong playerNumberGenerator = new AtomicLong(1); // 플레이어 번호를 고유하게 할당하기 위한 제너레이터
+    private final RedisRoomRepository redisRoomRepository;
+    private final CustomRedisRoomRepository customRedisRoomRepository;
 
     public GameSessionManager(
             @Qualifier("gameRunningExecutor") ThreadPoolTaskExecutor gameRunningExecutor,
             @Qualifier("gameLogicExecutor") ThreadPoolTaskExecutor gameLogicExecutor,
+            CustomRedisSessionRepository customRedisSessionRepository,
             RedisPubSubGameMessagePublisher redisPubSubGameMessagePublisher,
-            StringRedisTemplate stringRedisTemplate) {
+            StringRedisTemplate stringRedisTemplate, RedisRoomRepository redisRoomRepository, CustomRedisRoomRepository customRedisRoomRepository) {
         this.redisPubSubGameMessagePublisher = redisPubSubGameMessagePublisher;
         this.gameRunningExecutor = gameRunningExecutor;
         this.gameLogicExecutor = gameLogicExecutor;
         this.stringRedisTemplate = stringRedisTemplate;
+        this.customRedisSessionRepository = customRedisSessionRepository;
+        this.redisRoomRepository = redisRoomRepository;
+        this.customRedisRoomRepository = customRedisRoomRepository;
     }
 
     public void addGameSession(String gameId) throws InterruptedException {
@@ -47,6 +59,19 @@ public class GameSessionManager {
 
         Set<String> members = stringRedisTemplate.opsForSet().members(nicknameKey);
         stringRedisTemplate.opsForHash().entries("room:" + gameId);
+
+        Room room = redisRoomRepository.findById(gameId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 방입니다."));
+
+        room.setPlaying(true);
+        redisRoomRepository.save(room);
+
+        List<String> authorizations = customRedisRoomRepository.getUserSessionIdInRoom(gameId);
+
+        for(String member : authorizations) {
+            customRedisSessionRepository.setUserSessionState(member, State.IN_GAME, gameId);
+        }
+
 
         if (members == null || members.size() < 8) {
             System.out.println("게임 참가 인원이 부족합니다.");
