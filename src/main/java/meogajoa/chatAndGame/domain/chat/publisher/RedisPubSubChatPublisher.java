@@ -31,4 +31,43 @@ public class RedisPubSubChatPublisher {
             e.printStackTrace();
         }
     }
+
+    public void publishGameChatToUser(MeogajoaMessage.ChatPubSubResponseToUser chatPubSubResponseToUser) {
+        try {
+            String jsonString = objectMapper.writeValueAsString(chatPubSubResponseToUser);
+            stringRedisTemplate.convertAndSend("pubsub:gameChatToUser", jsonString);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void publishToBlack(MeogajoaMessage.ChatPubSubResponse chatPubSubResponse) {
+        try {
+            String jsonString = objectMapper.writeValueAsString(chatPubSubResponse);
+
+            stringRedisTemplate.convertAndSend("pubsub:blackChat", jsonString);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void publishToWhite(MeogajoaMessage.ChatPubSubResponse chatPubSubResponse) {
+        try {
+            String jsonString = objectMapper.writeValueAsString(chatPubSubResponse);
+
+            stringRedisTemplate.convertAndSend("pubsub:whiteChat", jsonString);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void publishToEliminated(MeogajoaMessage.ChatPubSubResponse chatPubSubResponse) {
+        try {
+            String jsonString = objectMapper.writeValueAsString(chatPubSubResponse);
+
+            stringRedisTemplate.convertAndSend("pubsub:eliminatedChat", jsonString);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }

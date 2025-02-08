@@ -5,6 +5,7 @@ import meogajoa.chatAndGame.common.dto.MeogajoaMessage;
 import meogajoa.chatAndGame.common.model.MessageType;
 import meogajoa.chatAndGame.domain.game.listener.GameSessionListener;
 import meogajoa.chatAndGame.domain.game.model.MiniGameType;
+import meogajoa.chatAndGame.domain.game.model.TeamColor;
 import meogajoa.chatAndGame.domain.game.publisher.RedisPubSubGameMessagePublisher;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Async;
@@ -32,6 +33,7 @@ public class GameSession {
     private List<Long> blackTeam;
     private List<Long> whiteTeam;
     private Map<String, Long> nicknameToPlayerNumber;
+    private Map<Long, String> playerNumberToNickname;
     private Player[] players;
     private final RedisPubSubGameMessagePublisher redisPubSubGameMessagePublisher;
     private final GameSessionListener gameSessionListener;
@@ -41,7 +43,7 @@ public class GameSession {
 
     private volatile boolean isGameRunning = true;
 
-    public GameSession(String id, @Qualifier("gameLogicExecutor") ThreadPoolTaskExecutor executor, List<Player> players, RedisPubSubGameMessagePublisher redisPubSubGameMessagePublisher, Map<String, Long> nicknameToPlayerNumber, GameSessionListener gameSessionListener) {
+    public GameSession(String id, @Qualifier("gameLogicExecutor") ThreadPoolTaskExecutor executor, List<Player> players, RedisPubSubGameMessagePublisher redisPubSubGameMessagePublisher, Map<String, Long> nicknameToPlayerNumber, Map<Long, String> playerNumberToNickname, GameSessionListener gameSessionListener) {
         this.id = id;
         this.executor = executor;
         this.dayCount = 0L;
@@ -52,10 +54,15 @@ public class GameSession {
 
         this.redisPubSubGameMessagePublisher = redisPubSubGameMessagePublisher;
         this.nicknameToPlayerNumber = nicknameToPlayerNumber;
+        this.playerNumberToNickname = playerNumberToNickname;
 
         for(Player player : players) {
             this.players[player.getNumber().intValue()] = player;
         }
+    }
+
+    public Long getPlayerNumberByNickname(String nickname){
+        return nicknameToPlayerNumber.get(nickname);
     }
 
     public void addRequest(MeogajoaMessage.GameMQRequest request){
@@ -177,7 +184,6 @@ public class GameSession {
             }
         }
 
-        redisPubSubGameMessagePublisher.publishGameEnd(id);
         gameSessionListener.onGameSessionEnd(id);
 
 
@@ -197,5 +203,28 @@ public class GameSession {
                 break;
             }
         }
+    }
+
+    public String findNicknameByPlayerNumber(Long playerNumber) {
+        return playerNumberToNickname.get(playerNumber);
+    }
+
+    public Long findPlayerNumberByNickname(String nickname) {
+        return nicknameToPlayerNumber.get(nickname);
+    }
+
+    public Boolean isBlackTeam(String sender) {
+        Player player = players[nicknameToPlayerNumber.get(sender).intValue()];
+        return player.getTeamColor().equals(TeamColor.BLACK);
+    }
+
+    public Boolean isWhiteTeam(String sender) {
+        Player player = players[nicknameToPlayerNumber.get(sender).intValue()];
+        return player.getTeamColor().equals(TeamColor.WHITE);
+    }
+
+    public boolean isEliminated(String sender) {
+        Player player = players[nicknameToPlayerNumber.get(sender).intValue()];
+        return player.isEliminated();
     }
 }

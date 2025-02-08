@@ -9,8 +9,6 @@ import meogajoa.chatAndGame.domain.chat.repository.CustomRedisChatLogRepository;
 import meogajoa.chatAndGame.domain.game.manager.GameSessionManager;
 import meogajoa.chatAndGame.domain.room.dto.RoomUserInfo;
 import org.springframework.data.redis.connection.stream.MapRecord;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.stream.StreamListener;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -43,6 +41,18 @@ public class AsyncStreamHandler {
                     break;
                 case "GAME_CHAT":
                     handleGameChat(record);
+                    break;
+                case "GAME_CHAT_TO_USER":
+                    handleGameChatToUser(record);
+                    break;
+                case "BLACK_CHAT":
+                    handleBlackChat(record);
+                    break;
+                case "WHITE_CHAT":
+                    handleWhiteChat(record);
+                    break;
+                case "ELIMINATED_CHAT":
+                    handleEliminatedChat(record);
                     break;
                 case "GAME_MY_INFO":{
                     String gameId = record.getValue().get("gameId");
@@ -111,6 +121,104 @@ public class AsyncStreamHandler {
                     .build();
 
             redisPubSubChatPublisher.publishToGame(chatPubSubResponse);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void handleGameChatToUser(MapRecord<String, String, String> record) {
+        try {
+            Long receiver = Long.parseLong(record.getValue().get("number"));
+            String gameId = record.getValue().get("id");
+            String content = record.getValue().get("content");
+
+            if(!gameSessionManager.isGamePlaying(gameId)) return;
+
+            Long sender = gameSessionManager.findPlayerNumberByNickname(gameId, record.getValue().get("sender"));
+
+            ChatLog chatLog = customRedisChatLogRepository.saveGameChatLog(content, gameId, receiver, sender);
+            String senderNickname = gameSessionManager.findNicknameByPlayerNumber(gameId, sender);
+            String receiverNickname = gameSessionManager.findNicknameByPlayerNumber(gameId, receiver);
+
+            MeogajoaMessage.ChatPubSubResponseToUser chatPubSubResponseToUser = MeogajoaMessage.ChatPubSubResponseToUser.builder()
+                    .receiver(receiverNickname)
+                    .sender(senderNickname)
+                    .id(gameId)
+                    .chatLog(chatLog)
+                    .build();
+
+            redisPubSubChatPublisher.publishGameChatToUser(chatPubSubResponseToUser);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void handleBlackChat(MapRecord<String, String, String> record) {
+        try {
+            String id = record.getValue().get("id");
+            String content = record.getValue().get("content");
+            String sender = record.getValue().get("sender");
+
+            if(!gameSessionManager.isBlackTeam(id, sender)) return;
+
+            Long senderNumber = gameSessionManager.findPlayerNumberByNickname(id, sender);
+            ChatLog chatLog = customRedisChatLogRepository.saveBlackChatLog(content, id, senderNumber);
+
+
+
+            MeogajoaMessage.ChatPubSubResponse chatPubSubResponse = MeogajoaMessage.ChatPubSubResponse.builder()
+                    .id(id)
+                    .chatLog(chatLog)
+                    .build();
+
+            redisPubSubChatPublisher.publishToBlack(chatPubSubResponse);
+
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void handleWhiteChat(MapRecord<String, String, String> record) {
+        try {
+            String id = record.getValue().get("id");
+            String content = record.getValue().get("content");
+            String sender = record.getValue().get("sender");
+
+            if(!gameSessionManager.isWhiteTeam(id, sender)) return;
+
+            Long senderNumber = gameSessionManager.findPlayerNumberByNickname(id, sender);
+            ChatLog chatLog = customRedisChatLogRepository.saveWhiteChatLog(content, id, senderNumber);
+
+            MeogajoaMessage.ChatPubSubResponse chatPubSubResponse = MeogajoaMessage.ChatPubSubResponse.builder()
+                    .id(id)
+                    .chatLog(chatLog)
+                    .build();
+
+            redisPubSubChatPublisher.publishToWhite(chatPubSubResponse);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void handleEliminatedChat(MapRecord<String, String, String> record) {
+        try {
+            String id = record.getValue().get("id");
+            String content = record.getValue().get("content");
+            String sender = record.getValue().get("sender");
+
+            if(!gameSessionManager.isEliminated(id, sender)) return;
+
+            Long senderNumber = gameSessionManager.findPlayerNumberByNickname(id, sender);
+            ChatLog chatLog = customRedisChatLogRepository.saveEliminatedChatLog(content, id, senderNumber);
+
+            MeogajoaMessage.ChatPubSubResponse chatPubSubResponse = MeogajoaMessage.ChatPubSubResponse.builder()
+                    .id(id)
+                    .chatLog(chatLog)
+                    .build();
+
+            redisPubSubChatPublisher.publishToEliminated(chatPubSubResponse);
         } catch (Exception e) {
             e.printStackTrace();
         }

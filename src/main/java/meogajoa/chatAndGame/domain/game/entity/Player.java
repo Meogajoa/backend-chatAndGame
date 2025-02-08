@@ -14,4 +14,9 @@ public class Player {
     private TeamColor teamColor;
     private Long money;
     private Boolean isSpy;
+    private Boolean isEliminated;
+
+    public boolean isEliminated() {
+        return isEliminated;
+    }
 }

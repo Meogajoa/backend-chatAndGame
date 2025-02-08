@@ -3,6 +3,7 @@ package meogajoa.chatAndGame.domain.game.manager;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import meogajoa.chatAndGame.common.dto.MeogajoaMessage;
 import meogajoa.chatAndGame.common.model.MessageType;
+import meogajoa.chatAndGame.domain.chat.publisher.RedisPubSubChatPublisher;
 import meogajoa.chatAndGame.domain.game.entity.GameSession;
 import meogajoa.chatAndGame.domain.game.entity.Player;
 import meogajoa.chatAndGame.domain.game.listener.GameSessionListener;
@@ -33,13 +34,14 @@ public class GameSessionManager implements GameSessionListener {
     private final StringRedisTemplate stringRedisTemplate;
     private final RedisRoomRepository redisRoomRepository;
     private final CustomRedisRoomRepository customRedisRoomRepository;
+    private final RedisPubSubChatPublisher redisPubSubChatPublisher;
 
     public GameSessionManager(
             @Qualifier("gameRunningExecutor") ThreadPoolTaskExecutor gameRunningExecutor,
             @Qualifier("gameLogicExecutor") ThreadPoolTaskExecutor gameLogicExecutor,
             CustomRedisSessionRepository customRedisSessionRepository,
             RedisPubSubGameMessagePublisher redisPubSubGameMessagePublisher,
-            StringRedisTemplate stringRedisTemplate, RedisRoomRepository redisRoomRepository, CustomRedisRoomRepository customRedisRoomRepository) {
+            StringRedisTemplate stringRedisTemplate, RedisRoomRepository redisRoomRepository, CustomRedisRoomRepository customRedisRoomRepository, RedisPubSubChatPublisher redisPubSubChatPublisher) {
         this.redisPubSubGameMessagePublisher = redisPubSubGameMessagePublisher;
         this.gameRunningExecutor = gameRunningExecutor;
         this.gameLogicExecutor = gameLogicExecutor;
@@ -47,6 +49,7 @@ public class GameSessionManager implements GameSessionListener {
         this.customRedisSessionRepository = customRedisSessionRepository;
         this.redisRoomRepository = redisRoomRepository;
         this.customRedisRoomRepository = customRedisRoomRepository;
+        this.redisPubSubChatPublisher = redisPubSubChatPublisher;
     }
 
     public void addGameSession(String gameId) throws InterruptedException {
@@ -98,7 +101,8 @@ public class GameSessionManager implements GameSessionListener {
                     nickname,
                     TeamColor.WHITE,
                     1000L,
-                    isSpy
+                    isSpy,
+                    false
             );
             players.add(player);
         }
@@ -111,17 +115,30 @@ public class GameSessionManager implements GameSessionListener {
                     nickname,
                     TeamColor.BLACK,
                     1000L,
-                    isSpy
+                    isSpy,
+                    false
             );
             players.add(player);
         }
 
         Map<String, Long> nicknameToPlayerNumber = new HashMap<>();
+        Map<Long, String> playerNumberToNickname = new HashMap<>();
         for (Player player : players) {
             nicknameToPlayerNumber.put(player.getNickname(), player.getNumber());
+            playerNumberToNickname.put(player.getNumber(), player.getNickname());
         }
 
-        GameSession gameSession = new GameSession(gameId, gameLogicExecutor, players, redisPubSubGameMessagePublisher, nicknameToPlayerNumber, this);
+        MeogajoaMessage.GameSystemResponse gameSystemResponse = MeogajoaMessage.GameSystemResponse.builder()
+                .id(gameId)
+                .sendTime(LocalDateTime.now())
+                .type(MessageType.GAME_START)
+                .content("게임을 시작해라!!!!!!!!")
+                .sender("SYSTEM")
+                .build();
+
+        redisPubSubGameMessagePublisher.gameStart(gameSystemResponse);
+
+        GameSession gameSession = new GameSession(gameId, gameLogicExecutor, players, redisPubSubGameMessagePublisher, nicknameToPlayerNumber, playerNumberToNickname,this);
         gameSessionMap.put(gameId, gameSession);
 
         gameRunningExecutor.submit(() -> {
@@ -134,14 +151,27 @@ public class GameSessionManager implements GameSessionListener {
 
         redisPubSubGameMessagePublisher.UserInfo(players);
 
-        MeogajoaMessage.GameSystemResponse gameSystemResponse = MeogajoaMessage.GameSystemResponse.builder()
-                .sendTime(LocalDateTime.now())
-                .type(MessageType.GAME_START)
-                .content(gameId)
-                .sender("SYSTEM")
-                .build();
 
-        redisPubSubGameMessagePublisher.gameStart(gameSystemResponse);
+    }
+
+    public String findNicknameByPlayerNumber(String gameId, Long playerNumber) {
+        GameSession gameSession = gameSessionMap.get(gameId);
+        if (gameSession == null) {
+            System.out.println("게임이 존재하지 않습니다.");
+            return null;
+        }
+
+        return gameSession.findNicknameByPlayerNumber(playerNumber);
+    }
+
+    public Long findPlayerNumberByNickname(String gameId, String nickname) {
+        GameSession gameSession = gameSessionMap.get(gameId);
+        if (gameSession == null) {
+            System.out.println("게임이 존재하지 않습니다.");
+            return null;
+        }
+
+        return gameSession.findPlayerNumberByNickname(nickname);
     }
 
     public void addRequest(MeogajoaMessage.GameMQRequest request) {
@@ -188,5 +218,39 @@ public class GameSessionManager implements GameSessionListener {
         gameSessionMap.remove(gameId);
 
         redisPubSubGameMessagePublisher.publishGameEnd(gameId);
+    }
+
+    public boolean isGamePlaying(String gameId) {
+        return gameSessionMap.containsKey(gameId);
+    }
+
+    public Boolean isBlackTeam(String id, String sender) {
+        GameSession gameSession = gameSessionMap.get(id);
+        if (gameSession == null) {
+            System.out.println("게임이 존재하지 않습니다.");
+            return false;
+        }
+
+        return gameSession.isBlackTeam(sender);
+    }
+
+    public Boolean isWhiteTeam(String id, String sender) {
+        GameSession gameSession = gameSessionMap.get(id);
+        if (gameSession == null) {
+            System.out.println("게임이 존재하지 않습니다.");
+            return false;
+        }
+
+        return gameSession.isWhiteTeam(sender);
+    }
+
+    public boolean isEliminated(String id, String sender) {
+        GameSession gameSession = gameSessionMap.get(id);
+        if (gameSession == null) {
+            System.out.println("게임이 존재하지 않습니다.");
+            return false;
+        }
+
+        return gameSession.isEliminated(sender);
     }
 }

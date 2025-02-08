@@ -47,7 +47,20 @@ public class CustomRedisChatLogRepository {
         redisTemplate.opsForList().rightPush(GAME_CHAT_LOG_KEY + gameId, chatLog);
 
         return chatLog;
+    }
 
+    public ChatLog saveGameChatLog(String content, String gameId, Long receiver, Long sender){
+        Long id = stringRedisTemplate.opsForValue().increment(CHAT_LOG_ID_KEY);
+        ChatLog chatLog = ChatLog.builder()
+                .id(String.valueOf(id))
+                .content(content)
+                .sender(sender.toString())
+                .sendTime(LocalDateTime.now())
+                .build();
+
+        redisTemplate.opsForList().rightPush(GAME_CHAT_LOG_KEY + gameId + "user:" + receiver, chatLog);
+
+        return chatLog;
     }
 
 
@@ -66,5 +79,47 @@ public class CustomRedisChatLogRepository {
         }
 
         return chatLogs;
+    }
+
+    public ChatLog saveBlackChatLog(String content, String id, Long senderNumber) {
+        Long logId = stringRedisTemplate.opsForValue().increment(CHAT_LOG_ID_KEY);
+        ChatLog chatLog = ChatLog.builder()
+                .id(String.valueOf(logId))
+                .content(content)
+                .sender(senderNumber.toString())
+                .sendTime(LocalDateTime.now())
+                .build();
+
+        redisTemplate.opsForList().rightPush(GAME_CHAT_LOG_KEY + id + ":black", chatLog);
+
+        return chatLog;
+    }
+
+    public ChatLog saveWhiteChatLog(String content, String id, Long senderNumber) {
+        Long logId = stringRedisTemplate.opsForValue().increment(CHAT_LOG_ID_KEY);
+        ChatLog chatLog = ChatLog.builder()
+                .id(String.valueOf(logId))
+                .content(content)
+                .sender(senderNumber.toString())
+                .sendTime(LocalDateTime.now())
+                .build();
+
+        redisTemplate.opsForList().rightPush(GAME_CHAT_LOG_KEY + id + ":white", chatLog);
+
+        return chatLog;
+    }
+
+    public ChatLog saveEliminatedChatLog(String content, String id, Long senderNumber) {
+        Long logId = stringRedisTemplate.opsForValue().increment(CHAT_LOG_ID_KEY);
+        ChatLog chatLog = ChatLog.builder()
+                .id(String.valueOf(logId))
+                .content(content)
+                .sender(senderNumber.toString())
+                .sendTime(LocalDateTime.now())
+                .build();
+
+        redisTemplate.opsForList().rightPush(GAME_CHAT_LOG_KEY + id + ":eliminated", chatLog);
+
+        return chatLog;
     }
 }
