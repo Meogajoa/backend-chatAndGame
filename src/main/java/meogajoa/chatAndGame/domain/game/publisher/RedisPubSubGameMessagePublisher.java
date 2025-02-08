@@ -20,6 +20,7 @@ public class RedisPubSubGameMessagePublisher {
     private final StringRedisTemplate stringRedisTemplate;
     private final ObjectMapper objectMapper;
     private final static String GAME_START_MESSAGE_KEY = "pubsub:gameStart";
+    private final static String GAME_END_MESSAGE_KEY = "pubsub:gameEnd";
     private final static String GAME_USER_INFO_KEY = "pubsub:userInfo";
     private final static String GAME_USER_INFO_PERSONAL_KEY = "pubsub:userInfoPersonal";
     private final static String GAME_DAY_OR_NIGHT_KEY = "pubsub:gameDayOrNight";
@@ -124,5 +125,21 @@ public class RedisPubSubGameMessagePublisher {
         }
     }
 
+    public void publishGameEnd(String gameId) {
+        try{
+            MeogajoaMessage.GameSystemResponse gameSystemResponse = MeogajoaMessage.GameSystemResponse.builder()
+                    .id(gameId)
+                    .sendTime(LocalDateTime.now())
+                    .type(MessageType.GAME_END)
+                    .content("게임이 종료되었습니다.")
+                    .sender("SYSTEM")
+                    .build();
 
+            String jsonString = objectMapper.writeValueAsString(gameSystemResponse);
+
+            stringRedisTemplate.convertAndSend(GAME_END_MESSAGE_KEY, jsonString);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

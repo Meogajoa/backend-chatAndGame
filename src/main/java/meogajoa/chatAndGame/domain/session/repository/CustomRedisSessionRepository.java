@@ -55,11 +55,10 @@ public class CustomRedisSessionRepository {
         );
     }
 
-    public void setUserSessionState(String authorization, State state, String roomId) {
+    public void setUserState(String authorization, State state, String roomId) {
         stringRedisTemplate.opsForHash().put(SESSION_PREFIX + authorization, "state", state.toString());
         stringRedisTemplate.opsForHash().put(SESSION_PREFIX + authorization, "roomId", roomId);
-        stringRedisTemplate.opsForHash().put(SESSION_PREFIX + authorization, "isInRoom", "true");
-
+        stringRedisTemplate.opsForHash().put(SESSION_PREFIX + authorization, "isInRoom", String.valueOf(true));
     }
 
     public String getNicknameBySessionId(String authorization) {

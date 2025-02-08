@@ -5,6 +5,7 @@ import meogajoa.chatAndGame.common.dto.MeogajoaMessage;
 import meogajoa.chatAndGame.common.model.MessageType;
 import meogajoa.chatAndGame.domain.game.entity.GameSession;
 import meogajoa.chatAndGame.domain.game.entity.Player;
+import meogajoa.chatAndGame.domain.game.listener.GameSessionListener;
 import meogajoa.chatAndGame.domain.game.model.TeamColor;
 import meogajoa.chatAndGame.domain.game.publisher.RedisPubSubGameMessagePublisher;
 import meogajoa.chatAndGame.domain.room.entity.Room;
@@ -23,14 +24,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Service
-public class GameSessionManager {
+public class GameSessionManager implements GameSessionListener {
     private final ConcurrentHashMap<String, GameSession> gameSessionMap = new ConcurrentHashMap<>();
     private final RedisPubSubGameMessagePublisher redisPubSubGameMessagePublisher;
     private final CustomRedisSessionRepository customRedisSessionRepository;
     private final ThreadPoolTaskExecutor gameRunningExecutor;
     private final ThreadPoolTaskExecutor gameLogicExecutor;
     private final StringRedisTemplate stringRedisTemplate;
-    private final AtomicLong playerNumberGenerator = new AtomicLong(1); // 플레이어 번호를 고유하게 할당하기 위한 제너레이터
     private final RedisRoomRepository redisRoomRepository;
     private final CustomRedisRoomRepository customRedisRoomRepository;
 
@@ -59,9 +59,15 @@ public class GameSessionManager {
 
         Set<String> members = stringRedisTemplate.opsForSet().members(nicknameKey);
         stringRedisTemplate.opsForHash().entries("room:" + gameId);
+        if (members == null || members.size() < 8) {
+            System.out.println("게임 참가 인원이 부족합니다.");
+            return;
+        }
 
         Room room = redisRoomRepository.findById(gameId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 방입니다."));
+
+        AtomicLong playerNumberGenerator = new AtomicLong(1);
 
         room.setPlaying(true);
         redisRoomRepository.save(room);
@@ -69,14 +75,9 @@ public class GameSessionManager {
         List<String> authorizations = customRedisRoomRepository.getUserSessionIdInRoom(gameId);
 
         for(String member : authorizations) {
-            customRedisSessionRepository.setUserSessionState(member, State.IN_GAME, gameId);
+            customRedisSessionRepository.setUserState(member, State.IN_GAME, gameId);
         }
 
-
-        if (members == null || members.size() < 8) {
-            System.out.println("게임 참가 인원이 부족합니다.");
-            return;
-        }
 
         List<String> membersList = new ArrayList<>(members);
         Collections.shuffle(membersList);
@@ -120,7 +121,7 @@ public class GameSessionManager {
             nicknameToPlayerNumber.put(player.getNickname(), player.getNumber());
         }
 
-        GameSession gameSession = new GameSession(gameId, gameLogicExecutor, players, redisPubSubGameMessagePublisher, nicknameToPlayerNumber);
+        GameSession gameSession = new GameSession(gameId, gameLogicExecutor, players, redisPubSubGameMessagePublisher, nicknameToPlayerNumber, this);
         gameSessionMap.put(gameId, gameSession);
 
         gameRunningExecutor.submit(() -> {
@@ -171,5 +172,21 @@ public class GameSessionManager {
         }
 
         gameSession.publishUserStatus(nickname);
+    }
+
+    @Override
+    public void onGameSessionEnd(String gameId) {
+        customRedisRoomRepository.getUserSessionIdInRoom(gameId).forEach(sessionId -> {
+            customRedisSessionRepository.setUserState(sessionId, State.IN_ROOM, gameId);
+        });
+
+        Room room = redisRoomRepository.findById(gameId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 방입니다."));
+        room.setPlaying(false);
+        redisRoomRepository.save(room);
+
+        gameSessionMap.remove(gameId);
+
+        redisPubSubGameMessagePublisher.publishGameEnd(gameId);
     }
 }

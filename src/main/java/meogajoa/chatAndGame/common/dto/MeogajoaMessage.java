@@ -1,6 +1,7 @@
 package meogajoa.chatAndGame.common.dto;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,6 +12,7 @@ import meogajoa.chatAndGame.domain.chat.dto.ChatLog;
 import java.time.LocalDateTime;
 import java.util.List;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class MeogajoaMessage {
 
     @AllArgsConstructor
@@ -129,5 +131,15 @@ public class MeogajoaMessage {
         private MessageType type;
         private String gameId;
         private String content;
+    }
+
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Data
+    @Builder
+    public static class GameEndResponse {
+        private MessageType type;
+        private String id;
+        private String sender;
     }
 }

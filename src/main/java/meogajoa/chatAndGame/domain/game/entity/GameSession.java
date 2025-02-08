@@ -3,6 +3,7 @@ package meogajoa.chatAndGame.domain.game.entity;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import meogajoa.chatAndGame.common.dto.MeogajoaMessage;
 import meogajoa.chatAndGame.common.model.MessageType;
+import meogajoa.chatAndGame.domain.game.listener.GameSessionListener;
 import meogajoa.chatAndGame.domain.game.model.MiniGameType;
 import meogajoa.chatAndGame.domain.game.publisher.RedisPubSubGameMessagePublisher;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -33,28 +34,27 @@ public class GameSession {
     private Map<String, Long> nicknameToPlayerNumber;
     private Player[] players;
     private final RedisPubSubGameMessagePublisher redisPubSubGameMessagePublisher;
+    private final GameSessionListener gameSessionListener;
 
 
     private AtomicBoolean processing = new AtomicBoolean(false);
 
     private volatile boolean isGameRunning = true;
 
-    public GameSession(String id, @Qualifier("gameLogicExecutor") ThreadPoolTaskExecutor executor, List<Player> players, RedisPubSubGameMessagePublisher redisPubSubGameMessagePublisher, Map<String, Long> nicknameToPlayerNumber) {
+    public GameSession(String id, @Qualifier("gameLogicExecutor") ThreadPoolTaskExecutor executor, List<Player> players, RedisPubSubGameMessagePublisher redisPubSubGameMessagePublisher, Map<String, Long> nicknameToPlayerNumber, GameSessionListener gameSessionListener) {
         this.id = id;
         this.executor = executor;
         this.dayCount = 0L;
         this.dayOrNight = "NIGHT";
         this.players = new Player[9];
         this.surviveCount = 8L;
+        this.gameSessionListener = gameSessionListener;
 
         this.redisPubSubGameMessagePublisher = redisPubSubGameMessagePublisher;
         this.nicknameToPlayerNumber = nicknameToPlayerNumber;
 
-        int idx = 1;
-
         for(Player player : players) {
-            this.players[idx] = player;
-            idx++;
+            this.players[player.getNumber().intValue()] = player;
         }
     }
 
@@ -78,15 +78,7 @@ public class GameSession {
                 }
 
                 if(request.getType().equals(MessageType.BUTTON_CLICK) && this.miniGame instanceof ButtonGame){
-                    if(request.getContent().equals("twenty")){
-                        this.miniGame.clickButton(nicknameToPlayerNumber.get(request.getSender()), request.getContent());
-                    } else if(request.getContent().equals("fifty")){
-                        this.miniGame.clickButton(nicknameToPlayerNumber.get(request.getSender()), request.getContent());
-                    } else if(request.getContent().equals("hundred")){
-                        this.miniGame.clickButton(nicknameToPlayerNumber.get(request.getSender()), request.getContent());
-                    } else {
-                        System.out.println("잘못된 버튼 클릭입니다.");
-                    }
+                    handleButtonClickReuqest(request);
                 }
             }
         } catch (InterruptedException e) {
@@ -97,6 +89,18 @@ public class GameSession {
             if (isGameRunning && !requestQueue.isEmpty()) {
                 triggerProcessingIfNeeded();
             }
+        }
+    }
+
+    private void handleButtonClickReuqest(MeogajoaMessage.GameMQRequest request){
+        if(request.getContent().equals("twenty")){
+            this.miniGame.clickButton(nicknameToPlayerNumber.get(request.getSender()), request.getContent());
+        } else if(request.getContent().equals("fifty")){
+            this.miniGame.clickButton(nicknameToPlayerNumber.get(request.getSender()), request.getContent());
+        } else if(request.getContent().equals("hundred")){
+            this.miniGame.clickButton(nicknameToPlayerNumber.get(request.getSender()), request.getContent());
+        } else {
+            System.out.println("잘못된 버튼 클릭입니다.");
         }
     }
 
@@ -173,20 +177,10 @@ public class GameSession {
             }
         }
 
-        System.out.println("게임이 끝났습니다.");
+        redisPubSubGameMessagePublisher.publishGameEnd(id);
+        gameSessionListener.onGameSessionEnd(id);
 
 
-    }
-
-    public void startMiniGame(MiniGameType miniGameType){
-        switch(miniGameType){
-            case BUTTON_CLICK:
-
-
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid mini game type: " + miniGameType);
-        }
     }
 
     public void publishGameStatus() {
