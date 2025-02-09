@@ -144,7 +144,7 @@ public class RedisPubSubGameMessagePublisher {
         }
     }
 
-    public void userListInfo(MeogajoaMessage.GameUserListResponse userListResponse) {
+    public void publishUserListInfo(MeogajoaMessage.GameUserListResponse userListResponse) {
         try {
             String jsonString = objectMapper.writeValueAsString(userListResponse);
             stringRedisTemplate.convertAndSend(GAME_USER_LIST_INFO_KEY, jsonString);

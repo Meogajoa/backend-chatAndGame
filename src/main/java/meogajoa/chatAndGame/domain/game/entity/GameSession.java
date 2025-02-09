@@ -246,13 +246,13 @@ public class GameSession {
         redisPubSubGameMessagePublisher.userInfoPersonal(player);
     }
 
-//    public MeogajoaMessage.GameUserListResponse getUserList() {
-//        MeogajoaMessage.GameUserListResponse response = MeogajoaMessage.GameUserListResponse.builder()
-//                .type(MessageType.GAME_USER_LIST)
-//                .id(id)
-//                .blackTeam(blackTeam)
-//                .whiteTeam(whiteTeam)
-//                .eliminated(eliminated)
-//                .build();
-//    }
+    public MeogajoaMessage.GameUserListResponse getUserList() {
+        MeogajoaMessage.GameUserListResponse response = MeogajoaMessage.GameUserListResponse.builder()
+                .type(MessageType.GAME_USER_LIST)
+                .id(id)
+                .blackTeam(blackTeam)
+                .whiteTeam(whiteTeam)
+                .eliminated(eliminated)
+                .build();
+    }
 }
