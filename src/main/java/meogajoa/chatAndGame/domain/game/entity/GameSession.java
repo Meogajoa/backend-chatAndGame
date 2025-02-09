@@ -3,6 +3,7 @@ package meogajoa.chatAndGame.domain.game.entity;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import meogajoa.chatAndGame.common.dto.MeogajoaMessage;
 import meogajoa.chatAndGame.common.model.MessageType;
+import meogajoa.chatAndGame.domain.chat.dto.PersonalChatLog;
 import meogajoa.chatAndGame.domain.game.listener.GameSessionListener;
 import meogajoa.chatAndGame.domain.game.model.MiniGameType;
 import meogajoa.chatAndGame.domain.game.model.TeamColor;
@@ -13,9 +14,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -36,6 +35,7 @@ public class GameSession {
     private Player[] players;
     private final RedisPubSubGameMessagePublisher redisPubSubGameMessagePublisher;
     private final GameSessionListener gameSessionListener;
+    private Map<String, List<PersonalChatLog>> personalChatLogMap;
 
 
     private AtomicBoolean processing = new AtomicBoolean(false);
@@ -58,6 +58,8 @@ public class GameSession {
         this.blackTeam = new ArrayList<>();
         this.whiteTeam = new ArrayList<>();
         this.eliminated = new ArrayList<>();
+
+        this.personalChatLogMap = new HashMap<>();
 
         for (int i = 1; i <= 4; i++) {
             this.blackTeam.add((long) i);
@@ -258,4 +260,34 @@ public class GameSession {
     }
 
 
+    public PersonalChatLog savePersonalChatLog(String content, Long sender, Long receiver) {
+        String id = Math.min(sender, receiver) + ":" + Math.max(sender, receiver);
+
+        PersonalChatLog personalChatLog = PersonalChatLog.builder()
+                .id(id)
+                .sender(sender.toString())
+                .receiver(receiver.toString())
+                .content(content)
+                .sendTime(LocalDateTime.now())
+                .build();
+
+        personalChatLogMap.computeIfAbsent(id, k -> new ArrayList<>()).add(personalChatLog);
+
+        return personalChatLog;
+    }
+
+    public List<PersonalChatLog> getPersonalChatLogs(String sender) {
+        List<PersonalChatLog> personalChatLogs = new ArrayList<>();
+        Long number = nicknameToPlayerNumber.get(sender);
+        for(int i = 1; i <= 8; i++) {
+            if(i == number) continue;
+            String id = Math.min(i, number) + ":" + Math.max(i, number);
+            List<PersonalChatLog> personalChatLogList = personalChatLogMap.get(id);
+            if(personalChatLogList != null) {
+                personalChatLogs.addAll(personalChatLogList);
+            }
+        }
+
+        return personalChatLogs;
+    }
 }

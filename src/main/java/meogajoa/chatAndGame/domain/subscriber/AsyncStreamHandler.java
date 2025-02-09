@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import meogajoa.chatAndGame.common.dto.MeogajoaMessage;
 import meogajoa.chatAndGame.domain.chat.dto.ChatLog;
+import meogajoa.chatAndGame.domain.chat.dto.PersonalChatLog;
 import meogajoa.chatAndGame.domain.chat.publisher.RedisPubSubChatPublisher;
 import meogajoa.chatAndGame.domain.chat.repository.CustomRedisChatLogRepository;
 import meogajoa.chatAndGame.domain.game.manager.GameSessionManager;
@@ -57,7 +58,7 @@ public class AsyncStreamHandler {
                 case "GAME_MY_INFO":{
                     String gameId = record.getValue().get("gameId");
                     String nickname = record.getValue().get("sender");
-                    gameSessionManager.publishUserPeronalStatus(gameId, nickname);
+                    gameSessionManager.publishPersonalUserStatus(gameId, nickname);
                     break;
                 }
                 case "GAME_USER_LIST":{
@@ -144,15 +145,13 @@ public class AsyncStreamHandler {
 
             Long sender = gameSessionManager.findPlayerNumberByNickname(gameId, record.getValue().get("sender"));
 
-            ChatLog chatLog = customRedisChatLogRepository.saveGameChatLog(content, gameId, receiver, sender);
-            String senderNickname = gameSessionManager.findNicknameByPlayerNumber(gameId, sender);
-            String receiverNickname = gameSessionManager.findNicknameByPlayerNumber(gameId, receiver);
+            PersonalChatLog personalChatLog = gameSessionManager.savePersonalChatLog(gameId, content, sender, receiver);
 
             MeogajoaMessage.ChatPubSubResponseToUser chatPubSubResponseToUser = MeogajoaMessage.ChatPubSubResponseToUser.builder()
-                    .receiver(receiverNickname)
-                    .sender(senderNickname)
                     .id(gameId)
-                    .chatLog(chatLog)
+                    .personalChatLog(personalChatLog)
+                    .receiver(gameSessionManager.findNicknameByPlayerNumber(gameId, receiver))
+                    .sender(gameSessionManager.findNicknameByPlayerNumber(gameId, sender))
                     .build();
 
             redisPubSubChatPublisher.publishGameChatToUser(chatPubSubResponseToUser);

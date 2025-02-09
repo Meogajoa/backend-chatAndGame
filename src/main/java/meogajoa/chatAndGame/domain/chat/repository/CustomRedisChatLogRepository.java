@@ -3,6 +3,7 @@ package meogajoa.chatAndGame.domain.chat.repository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import meogajoa.chatAndGame.domain.chat.dto.ChatLog;
+import meogajoa.chatAndGame.domain.chat.dto.PersonalChatLog;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Repository;
@@ -61,6 +62,22 @@ public class CustomRedisChatLogRepository {
         redisTemplate.opsForList().rightPush(GAME_CHAT_LOG_KEY + gameId + ":to:" + receiver, chatLog);
 
         return chatLog;
+    }
+
+    public PersonalChatLog savePersonalChatLog(String gameId, String content, Long sender, Long receiver) {
+        Long id = stringRedisTemplate.opsForValue().increment(CHAT_LOG_ID_KEY);
+        PersonalChatLog personalChatLog = PersonalChatLog.builder()
+                .id(String.valueOf(id))
+                .sender(sender.toString())
+                .receiver(receiver.toString())
+                .content(content)
+                .sendTime(LocalDateTime.now())
+                .build();
+
+        redisTemplate.opsForList().rightPush(GAME_CHAT_LOG_KEY + gameId + ":to:" + receiver, personalChatLog);
+
+        return personalChatLog;
+
     }
 
     public List<ChatLog> getGameChatLog(String gameId) {

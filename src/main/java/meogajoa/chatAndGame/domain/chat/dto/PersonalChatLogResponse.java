@@ -16,5 +16,5 @@ public class PersonalChatLogResponse {
     private MessageType type;
     private String id;
     private String receiver;
-    private List<ChatLog> chatLogs;
+    private List<PersonalChatLog> personalChatLogs;
 }

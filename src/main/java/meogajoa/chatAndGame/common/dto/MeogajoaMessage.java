@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import meogajoa.chatAndGame.common.model.MessageType;
 import meogajoa.chatAndGame.domain.chat.dto.ChatLog;
+import meogajoa.chatAndGame.domain.chat.dto.PersonalChatLog;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -93,14 +94,14 @@ public class MeogajoaMessage {
     @Builder
     public static class ChatPubSubResponseToUser{
         String id;
-        ChatLog chatLog;
+        PersonalChatLog personalChatLog;
         String receiver;
         String sender;
 
-        public static ChatPubSubResponseToUser of(String id, ChatLog chatLog, String receiver, String sender) {
+        public static ChatPubSubResponseToUser of(String id, PersonalChatLog personalChatLog, String receiver, String sender) {
             return ChatPubSubResponseToUser.builder()
                     .id(id)
-                    .chatLog(chatLog)
+                    .personalChatLog(personalChatLog)
                     .receiver(receiver)
                     .sender(sender)
                     .build();

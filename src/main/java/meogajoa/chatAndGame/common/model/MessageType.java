@@ -17,7 +17,8 @@ public enum MessageType {
     BUTTON_CLICK("BUTTON_CLICK"),
     GAME_USER_LIST("GAME_USER_LIST"),
     GET_GAME_CHAT("GET_GAME_CHAT"),
-    CHAT_LOGS("CHAT_LOGS"),;
+    CHAT_LOGS("CHAT_LOGS"),
+    PERSONAL_CHAT_LOGS("PERSONAL_CHAT_LOGS");
 
 
     private final String value;

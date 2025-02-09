@@ -4,8 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import meogajoa.chatAndGame.common.dto.MeogajoaMessage;
 import meogajoa.chatAndGame.common.model.MessageType;
 import meogajoa.chatAndGame.domain.chat.dto.ChatLog;
-import meogajoa.chatAndGame.domain.chat.dto.PersonalChatLogResponse;
+import meogajoa.chatAndGame.domain.chat.dto.PersonalChatLog;
 import meogajoa.chatAndGame.domain.chat.dto.ChatLogResponse;
+import meogajoa.chatAndGame.domain.chat.dto.PersonalChatLogResponse;
 import meogajoa.chatAndGame.domain.chat.publisher.RedisPubSubChatPublisher;
 import meogajoa.chatAndGame.domain.chat.repository.CustomRedisChatLogRepository;
 import meogajoa.chatAndGame.domain.game.entity.GameSession;
@@ -59,6 +60,17 @@ public class GameSessionManager implements GameSessionListener {
         this.customRedisRoomRepository = customRedisRoomRepository;
         this.redisPubSubChatPublisher = redisPubSubChatPublisher;
         this.customRedisChatLogRepository = customRedisChatLogRepository;
+    }
+
+    public PersonalChatLog savePersonalChatLog(String gameId, String content, Long sender, Long receiver) {
+        GameSession gameSession = gameSessionMap.get(gameId);
+        if(gameSession == null){
+            System.out.println("게임이 존재하지 않습니다.");
+            return null;
+        }
+
+        return gameSession.savePersonalChatLog(content, sender, receiver);
+
     }
 
     public void addGameSession(String gameId) throws InterruptedException {
@@ -263,7 +275,7 @@ public class GameSessionManager implements GameSessionListener {
         return gameSession.isEliminated(sender);
     }
 
-    public void publishUserPeronalStatus(String gameId, String nickname) {
+    public void publishPersonalUserStatus(String gameId, String nickname) {
         GameSession gameSession = gameSessionMap.get(gameId);
         if (gameSession == null) {
             System.out.println("게임이 존재하지 않습니다.");
@@ -296,8 +308,8 @@ public class GameSessionManager implements GameSessionListener {
         ChatLogResponse chatLogResponse = ChatLogResponse.builder().type(MessageType.CHAT_LOGS).id(gameId).chatLogs(chatLog).build();
         redisPubSubChatPublisher.publishGameChatList(chatLogResponse);
 
-        List<ChatLog> personalChatLog = customRedisChatLogRepository.getPersonalGameChatLog(gameId, gameSession.findPlayerNumberByNickname(sender));
-        PersonalChatLogResponse personalChatLogResponse = PersonalChatLogResponse.builder().type(MessageType.CHAT_LOGS).id(gameId).chatLogs(personalChatLog).receiver(sender).build();
+        List<PersonalChatLog> personalChatLogs = gameSession.getPersonalChatLogs(sender);
+        PersonalChatLogResponse personalChatLogResponse = PersonalChatLogResponse.builder().type(MessageType.PERSONAL_CHAT_LOGS).id(gameId).receiver(sender).personalChatLogs(personalChatLogs).build();
         redisPubSubChatPublisher.publishPersonalChatList(personalChatLogResponse);
 
 
