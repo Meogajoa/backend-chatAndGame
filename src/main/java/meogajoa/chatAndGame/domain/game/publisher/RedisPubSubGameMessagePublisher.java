@@ -60,7 +60,7 @@ public class RedisPubSubGameMessagePublisher {
     public void broadCastDayNotice(String gameId, Long day, String dayOrNight) {
         try {
             MeogajoaMessage.GameDayOrNightResponse gameDayOrNightResponse = MeogajoaMessage.GameDayOrNightResponse.builder()
-                    .gameId(gameId)
+                    .id(gameId)
                     .sender("SYSTEM")
                     .sendTime(LocalDateTime.now())
                     .type(MessageType.GAME_DAY_OR_NIGHT)

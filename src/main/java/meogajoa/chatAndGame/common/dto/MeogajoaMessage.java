@@ -62,7 +62,7 @@ public class MeogajoaMessage {
     @Data
     @Builder
     public static class GameDayOrNightResponse {
-        private String gameId;
+        private String id;
         private String sender;
         private MessageType type;
         private Long day;
