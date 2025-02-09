@@ -3,7 +3,11 @@ package meogajoa.chatAndGame.domain.game.manager;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import meogajoa.chatAndGame.common.dto.MeogajoaMessage;
 import meogajoa.chatAndGame.common.model.MessageType;
+import meogajoa.chatAndGame.domain.chat.dto.ChatLog;
+import meogajoa.chatAndGame.domain.chat.dto.PersonalChatLogResponse;
+import meogajoa.chatAndGame.domain.chat.dto.ChatLogResponse;
 import meogajoa.chatAndGame.domain.chat.publisher.RedisPubSubChatPublisher;
+import meogajoa.chatAndGame.domain.chat.repository.CustomRedisChatLogRepository;
 import meogajoa.chatAndGame.domain.game.entity.GameSession;
 import meogajoa.chatAndGame.domain.game.entity.Player;
 import meogajoa.chatAndGame.domain.game.listener.GameSessionListener;
@@ -34,6 +38,7 @@ public class GameSessionManager implements GameSessionListener {
     private final StringRedisTemplate stringRedisTemplate;
     private final RedisRoomRepository redisRoomRepository;
     private final CustomRedisRoomRepository customRedisRoomRepository;
+    private final CustomRedisChatLogRepository customRedisChatLogRepository;
     private final RedisPubSubChatPublisher redisPubSubChatPublisher;
 
     public GameSessionManager(
@@ -41,7 +46,10 @@ public class GameSessionManager implements GameSessionListener {
             @Qualifier("gameLogicExecutor") ThreadPoolTaskExecutor gameLogicExecutor,
             CustomRedisSessionRepository customRedisSessionRepository,
             RedisPubSubGameMessagePublisher redisPubSubGameMessagePublisher,
-            StringRedisTemplate stringRedisTemplate, RedisRoomRepository redisRoomRepository, CustomRedisRoomRepository customRedisRoomRepository, RedisPubSubChatPublisher redisPubSubChatPublisher) {
+            StringRedisTemplate stringRedisTemplate, RedisRoomRepository redisRoomRepository,
+            CustomRedisRoomRepository customRedisRoomRepository,
+            RedisPubSubChatPublisher redisPubSubChatPublisher,
+            CustomRedisChatLogRepository customRedisChatLogRepository) {
         this.redisPubSubGameMessagePublisher = redisPubSubGameMessagePublisher;
         this.gameRunningExecutor = gameRunningExecutor;
         this.gameLogicExecutor = gameLogicExecutor;
@@ -50,6 +58,7 @@ public class GameSessionManager implements GameSessionListener {
         this.redisRoomRepository = redisRoomRepository;
         this.customRedisRoomRepository = customRedisRoomRepository;
         this.redisPubSubChatPublisher = redisPubSubChatPublisher;
+        this.customRedisChatLogRepository = customRedisChatLogRepository;
     }
 
     public void addGameSession(String gameId) throws InterruptedException {
@@ -274,5 +283,40 @@ public class GameSessionManager implements GameSessionListener {
 
         MeogajoaMessage.GameUserListResponse userListResponse = gameSession.getUserList();
         redisPubSubGameMessagePublisher.publishUserListInfo(userListResponse);
+    }
+
+    public void publishGameChat(String gameId, String sender) {
+        GameSession gameSession = gameSessionMap.get(gameId);
+        if (gameSession == null) {
+            System.out.println("게임이 존재하지 않습니다.");
+            return;
+        }
+
+        List<ChatLog> chatLog = customRedisChatLogRepository.getGameChatLog(gameId);
+        ChatLogResponse chatLogResponse = ChatLogResponse.builder().type(MessageType.CHAT_LOGS).id(gameId).chatLogs(chatLog).build();
+        redisPubSubChatPublisher.publishGameChatList(chatLogResponse);
+
+        List<ChatLog> personalChatLog = customRedisChatLogRepository.getPersonalGameChatLog(gameId, gameSession.findPlayerNumberByNickname(sender));
+        PersonalChatLogResponse personalChatLogResponse = PersonalChatLogResponse.builder().type(MessageType.CHAT_LOGS).id(gameId).chatLogs(personalChatLog).receiver(sender).build();
+        redisPubSubChatPublisher.publishPersonalChatList(personalChatLogResponse);
+
+
+        if(gameSession.isBlackTeam(sender)){
+            List<ChatLog> blackChatLog = customRedisChatLogRepository.getBlackChatLog(gameId);
+            ChatLogResponse blackChatLogResponse = ChatLogResponse.builder().type(MessageType.CHAT_LOGS).id(gameId).chatLogs(blackChatLog).build();
+            redisPubSubChatPublisher.publishBlackChatList(blackChatLogResponse);
+        } else if(gameSession.isWhiteTeam(sender)) {
+            List<ChatLog> whiteChatLog = customRedisChatLogRepository.getWhiteChatLog(gameId);
+            ChatLogResponse whiteChatLogResponse = ChatLogResponse.builder().type(MessageType.CHAT_LOGS).id(gameId).chatLogs(whiteChatLog).build();
+            redisPubSubChatPublisher.publishWhiteChatList(whiteChatLogResponse);
+        }
+
+        if(gameSession.isEliminated(sender)){
+            List<ChatLog> eliminatedChatLog = customRedisChatLogRepository.getEliminatedChatLog(gameId);
+            ChatLogResponse eliminatedChatLogResponse = ChatLogResponse.builder().type(MessageType.CHAT_LOGS).id(gameId).chatLogs(eliminatedChatLog).build();
+            redisPubSubChatPublisher.publishEliminatedChatList(eliminatedChatLogResponse);
+        }
+
+
     }
 }

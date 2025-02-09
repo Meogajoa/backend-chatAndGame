@@ -71,6 +71,13 @@ public class AsyncStreamHandler {
                     gameSessionManager.publishGameStatus(gameId);
                     break;
                 }
+                case "GET_GAME_CHAT": {
+                    String gameId = record.getValue().get("gameId");
+                    String sender = record.getValue().get("sender");
+                    System.out.println("받음 진입점");
+                    gameSessionManager.publishGameChat(gameId, sender);
+                    break;
+                }
                 default:
             }
 

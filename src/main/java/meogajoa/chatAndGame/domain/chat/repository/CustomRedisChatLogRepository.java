@@ -58,26 +58,58 @@ public class CustomRedisChatLogRepository {
                 .sendTime(LocalDateTime.now())
                 .build();
 
-        redisTemplate.opsForList().rightPush(GAME_CHAT_LOG_KEY + gameId + "user:" + receiver, chatLog);
+        redisTemplate.opsForList().rightPush(GAME_CHAT_LOG_KEY + gameId + ":to:" + receiver, chatLog);
 
         return chatLog;
     }
 
-
-
-    public List<ChatLog> getRoomChatLogs(String roomId) {
-        List<Object> list = redisTemplate.opsForList().range(ROOM_CHAT_LOG_KEY + roomId, 0, -1);
-        List<ChatLog> chatLogs = new ArrayList<ChatLog>();
-
-        if(list == null) {
-            return chatLogs;
+    public List<ChatLog> getGameChatLog(String gameId) {
+        List<ChatLog> chatLogs = new ArrayList<>();
+        List<Object> chatLogList = redisTemplate.opsForList().range(GAME_CHAT_LOG_KEY + gameId, 0, -1);
+        if(chatLogList == null) return chatLogs;
+        for (Object chatLog : chatLogList) {
+            chatLogs.add(objectMapper.convertValue(chatLog, ChatLog.class));
         }
+        return chatLogs;
+    }
 
-        for(Object o : list) {
-            ChatLog chatLog = objectMapper.convertValue(o, ChatLog.class);
-            chatLogs.add(chatLog);
+    public List<ChatLog> getPersonalGameChatLog(String gameId, Long receiver) {
+        List<ChatLog> chatLogs = new ArrayList<>();
+        List<Object> chatLogList = redisTemplate.opsForList().range(GAME_CHAT_LOG_KEY + gameId + ":to:" + receiver, 0, -1);
+        if(chatLogList == null) return chatLogs;
+        for (Object chatLog : chatLogList) {
+            chatLogs.add(objectMapper.convertValue(chatLog, ChatLog.class));
         }
+        return chatLogs;
+    }
 
+    public List<ChatLog> getBlackChatLog(String id) {
+        List<ChatLog> chatLogs = new ArrayList<>();
+        List<Object> chatLogList = redisTemplate.opsForList().range(GAME_CHAT_LOG_KEY + id + ":black", 0, -1);
+        if(chatLogList == null) return chatLogs;
+        for (Object chatLog : chatLogList) {
+            chatLogs.add(objectMapper.convertValue(chatLog, ChatLog.class));
+        }
+        return chatLogs;
+    }
+
+    public List<ChatLog> getWhiteChatLog(String id) {
+        List<ChatLog> chatLogs = new ArrayList<>();
+        List<Object> chatLogList = redisTemplate.opsForList().range(GAME_CHAT_LOG_KEY + id + ":white", 0, -1);
+        if(chatLogList == null) return chatLogs;
+        for (Object chatLog : chatLogList) {
+            chatLogs.add(objectMapper.convertValue(chatLog, ChatLog.class));
+        }
+        return chatLogs;
+    }
+
+    public List<ChatLog> getEliminatedChatLog(String gameId) {
+        List<ChatLog> chatLogs = new ArrayList<>();
+        List<Object> chatLogList = redisTemplate.opsForList().range(GAME_CHAT_LOG_KEY + gameId + ":eliminated", 0, -1);
+        if(chatLogList == null) return chatLogs;
+        for (Object chatLog : chatLogList) {
+            chatLogs.add(objectMapper.convertValue(chatLog, ChatLog.class));
+        }
         return chatLogs;
     }
 
@@ -122,4 +154,6 @@ public class CustomRedisChatLogRepository {
 
         return chatLog;
     }
+
+
 }
