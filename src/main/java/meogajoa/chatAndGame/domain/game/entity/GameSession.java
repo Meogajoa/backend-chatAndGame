@@ -59,32 +59,32 @@ public class GameSession {
         this.whiteTeam = new ArrayList<>();
         this.eliminated = new ArrayList<>();
 
-        for(int i = 1; i <= 4; i++){
-            this.blackTeam.add((long)i);
-            this.players[i] = players.get(i-1);
+        for (int i = 1; i <= 4; i++) {
+            this.blackTeam.add((long) i);
+            this.players[i] = players.get(i - 1);
         }
 
-        for(int i = 5; i <= 8; i++){
-            this.whiteTeam.add((long)i);
-            this.players[i] = players.get(i-1);
+        for (int i = 5; i <= 8; i++) {
+            this.whiteTeam.add((long) i);
+            this.players[i] = players.get(i - 1);
         }
 
-        for(Player player : players) {
+        for (Player player : players) {
             this.players[player.getNumber().intValue()] = player;
         }
     }
 
-    public Long getPlayerNumberByNickname(String nickname){
+    public Long getPlayerNumberByNickname(String nickname) {
         return nicknameToPlayerNumber.get(nickname);
     }
 
-    public void addRequest(MeogajoaMessage.GameMQRequest request){
+    public void addRequest(MeogajoaMessage.GameMQRequest request) {
         requestQueue.add(request);
         triggerProcessingIfNeeded();
     }
 
-    public void triggerProcessingIfNeeded(){
-        if(processing.compareAndSet(false, true)){
+    public void triggerProcessingIfNeeded() {
+        if (processing.compareAndSet(false, true)) {
             executor.execute(this::processRequest);
         }
     }
@@ -97,7 +97,7 @@ public class GameSession {
                     break;
                 }
 
-                if(request.getType().equals(MessageType.BUTTON_CLICK) && this.miniGame instanceof ButtonGame){
+                if (request.getType().equals(MessageType.BUTTON_CLICK) && this.miniGame instanceof ButtonGame) {
                     handleButtonClickReuqest(request);
                 }
             }
@@ -112,7 +112,7 @@ public class GameSession {
         }
     }
 
-    private void handleButtonClickReuqest(MeogajoaMessage.GameMQRequest request){
+    private void handleButtonClickReuqest(MeogajoaMessage.GameMQRequest request) {
         switch (request.getContent()) {
             case "twenty" ->
                     this.miniGame.clickButton(nicknameToPlayerNumber.get(request.getSender()), request.getContent());
@@ -124,8 +124,8 @@ public class GameSession {
         }
     }
 
-    private void handleRequest(MeogajoaMessage.GameMQRequest request){
-        if(request.getType() == MessageType.TEST){
+    private void handleRequest(MeogajoaMessage.GameMQRequest request) {
+        if (request.getType() == MessageType.TEST) {
             System.out.println(LocalDateTime.now() + "에 보냈어요!!!: ");
         }
     }
@@ -158,7 +158,8 @@ public class GameSession {
             }
         }
 
-        this.dayCount++; dayOrNight = "DAY";
+        this.dayCount++;
+        dayOrNight = "DAY";
         redisPubSubGameMessagePublisher.broadCastDayNotice(id, this.dayCount, dayOrNight);
         redisPubSubGameMessagePublisher.broadCastMiniGameEndNotice(targetTime, MiniGameType.BUTTON_CLICK, id);
 
@@ -208,8 +209,8 @@ public class GameSession {
 
     public void publishUserStatus(String nickname) {
         List<Player> temp = new ArrayList<>();
-        for(int i = 1; i <= 8; i++){
-            if(players[i].getNickname().equals(nickname)){
+        for (int i = 1; i <= 8; i++) {
+            if (players[i].getNickname().equals(nickname)) {
                 temp.add(players[i]);
                 redisPubSubGameMessagePublisher.userInfo(temp);
                 System.out.println("유저 List에 포함시켜서 날렸음");
@@ -247,7 +248,7 @@ public class GameSession {
     }
 
     public MeogajoaMessage.GameUserListResponse getUserList() {
-        MeogajoaMessage.GameUserListResponse response = MeogajoaMessage.GameUserListResponse.builder()
+        return MeogajoaMessage.GameUserListResponse.builder()
                 .type(MessageType.GAME_USER_LIST)
                 .id(id)
                 .blackTeam(blackTeam)
