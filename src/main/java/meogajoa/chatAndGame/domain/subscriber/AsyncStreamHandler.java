@@ -126,14 +126,9 @@ public class AsyncStreamHandler {
             String content = record.getValue().get("content");
             String sender = record.getValue().get("sender");
 
-            ChatLog chatLog = customRedisChatLogRepository.saveGameChatLog(content, id, sender);
+            gameSessionManager.gameChat(id, content, sender);
 
-            MeogajoaMessage.ChatPubSubResponse chatPubSubResponse = MeogajoaMessage.ChatPubSubResponse.builder()
-                    .id(id)
-                    .chatLog(chatLog)
-                    .build();
 
-            redisPubSubChatPublisher.publishToGame(chatPubSubResponse);
         } catch (Exception e) {
             e.printStackTrace();
         }

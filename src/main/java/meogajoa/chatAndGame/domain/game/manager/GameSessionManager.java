@@ -319,4 +319,24 @@ public class GameSessionManager implements GameSessionListener {
 
 
     }
+
+    public void gameChat(String id, String content, String sender) {
+        GameSession gameSession = gameSessionMap.get(id);
+        if (gameSession == null) {
+            System.out.println("게임이 존재하지 않습니다.");
+            return;
+        }
+
+        Long playerNumber = gameSession.findPlayerNumberByNickname(sender);
+
+        ChatLog chatLog = customRedisChatLogRepository.saveGameChatLog(content, id, playerNumber.toString());
+
+        MeogajoaMessage.ChatPubSubResponse chatPubSubResponse = MeogajoaMessage.ChatPubSubResponse.builder()
+                .id(id)
+                .chatLog(chatLog)
+                .build();
+
+        redisPubSubChatPublisher.publishToGame(chatPubSubResponse);
+
+    }
 }
