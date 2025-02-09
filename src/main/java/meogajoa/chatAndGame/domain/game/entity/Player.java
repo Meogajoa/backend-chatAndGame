@@ -1,5 +1,6 @@
 package meogajoa.chatAndGame.domain.game.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -13,7 +14,11 @@ public class Player {
     private String nickname;
     private TeamColor teamColor;
     private Long money;
+
+    @JsonProperty("spy")
     private Boolean isSpy;
+
+    @JsonProperty("eliminated")
     private Boolean isEliminated;
 
     public boolean isEliminated() {

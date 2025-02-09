@@ -22,10 +22,11 @@ public class RedisPubSubGameMessagePublisher {
     private final static String GAME_START_MESSAGE_KEY = "pubsub:gameStart";
     private final static String GAME_END_MESSAGE_KEY = "pubsub:gameEnd";
     private final static String GAME_USER_INFO_KEY = "pubsub:userInfo";
-    private final static String GAME_USER_INFO_PERSONAL_KEY = "pubsub:userInfoPersonal";
+    private final static String GAME_USER_INFO_PERSONAL_KEY = "pubsub:gameUserInfoPersonal";
     private final static String GAME_DAY_OR_NIGHT_KEY = "pubsub:gameDayOrNight";
     private final static String GAME_MINI_GAME_NOTICE_KEY = "pubsub:miniGameNotice";
     private final static String BUTTON_GAME_STATUS_KEY = "pubsub:buttonGameStatus";
+    private final static String GAME_USER_LIST_INFO_KEY = "pubsub:gameUserListInfo";
 
     public void gameStart(MeogajoaMessage.GameSystemResponse gameSystemResponse) {
         try {
@@ -37,7 +38,7 @@ public class RedisPubSubGameMessagePublisher {
         }
     }
 
-    public void UserInfo(List<Player> players) {
+    public void userInfo(List<Player> players) {
         try {
             String jsonString = objectMapper.writeValueAsString(players);
             stringRedisTemplate.convertAndSend(GAME_USER_INFO_KEY, jsonString);
@@ -138,6 +139,24 @@ public class RedisPubSubGameMessagePublisher {
             String jsonString = objectMapper.writeValueAsString(gameSystemResponse);
 
             stringRedisTemplate.convertAndSend(GAME_END_MESSAGE_KEY, jsonString);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void userListInfo(MeogajoaMessage.GameUserListResponse userListResponse) {
+        try {
+            String jsonString = objectMapper.writeValueAsString(userListResponse);
+            stringRedisTemplate.convertAndSend(GAME_USER_LIST_INFO_KEY, jsonString);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void userInfoPersonal(Player player) {
+        try{
+            String jsonString = objectMapper.writeValueAsString(player);
+            stringRedisTemplate.convertAndSend(GAME_USER_INFO_PERSONAL_KEY, jsonString);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }

@@ -57,7 +57,7 @@ public class AsyncStreamHandler {
                 case "GAME_MY_INFO":{
                     String gameId = record.getValue().get("gameId");
                     String nickname = record.getValue().get("sender");
-                    gameSessionManager.publishUserStatus(gameId, nickname);
+                    gameSessionManager.publishUserPeronalStatus(gameId, nickname);
                     break;
                 }
                 case "GAME_DAY_OR_NIGHT": {

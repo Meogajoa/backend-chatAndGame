@@ -8,14 +8,12 @@ import meogajoa.chatAndGame.domain.game.model.MiniGameType;
 import meogajoa.chatAndGame.domain.game.model.TeamColor;
 import meogajoa.chatAndGame.domain.game.publisher.RedisPubSubGameMessagePublisher;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -32,6 +30,7 @@ public class GameSession {
     private Long surviveCount;
     private List<Long> blackTeam;
     private List<Long> whiteTeam;
+    private List<Long> eliminated;
     private Map<String, Long> nicknameToPlayerNumber;
     private Map<Long, String> playerNumberToNickname;
     private Player[] players;
@@ -55,6 +54,20 @@ public class GameSession {
         this.redisPubSubGameMessagePublisher = redisPubSubGameMessagePublisher;
         this.nicknameToPlayerNumber = nicknameToPlayerNumber;
         this.playerNumberToNickname = playerNumberToNickname;
+
+        this.blackTeam = new ArrayList<>();
+        this.whiteTeam = new ArrayList<>();
+        this.eliminated = new ArrayList<>();
+
+        for(int i = 1; i <= 4; i++){
+            this.blackTeam.add((long)i);
+            this.players[i] = players.get(i-1);
+        }
+
+        for(int i = 5; i <= 8; i++){
+            this.whiteTeam.add((long)i);
+            this.players[i] = players.get(i-1);
+        }
 
         for(Player player : players) {
             this.players[player.getNumber().intValue()] = player;
@@ -100,14 +113,14 @@ public class GameSession {
     }
 
     private void handleButtonClickReuqest(MeogajoaMessage.GameMQRequest request){
-        if(request.getContent().equals("twenty")){
-            this.miniGame.clickButton(nicknameToPlayerNumber.get(request.getSender()), request.getContent());
-        } else if(request.getContent().equals("fifty")){
-            this.miniGame.clickButton(nicknameToPlayerNumber.get(request.getSender()), request.getContent());
-        } else if(request.getContent().equals("hundred")){
-            this.miniGame.clickButton(nicknameToPlayerNumber.get(request.getSender()), request.getContent());
-        } else {
-            System.out.println("잘못된 버튼 클릭입니다.");
+        switch (request.getContent()) {
+            case "twenty" ->
+                    this.miniGame.clickButton(nicknameToPlayerNumber.get(request.getSender()), request.getContent());
+            case "fifty" ->
+                    this.miniGame.clickButton(nicknameToPlayerNumber.get(request.getSender()), request.getContent());
+            case "hundred" ->
+                    this.miniGame.clickButton(nicknameToPlayerNumber.get(request.getSender()), request.getContent());
+            default -> System.out.println("잘못된 버튼 클릭입니다.");
         }
     }
 
@@ -198,7 +211,7 @@ public class GameSession {
         for(int i = 1; i <= 8; i++){
             if(players[i].getNickname().equals(nickname)){
                 temp.add(players[i]);
-                redisPubSubGameMessagePublisher.UserInfo(temp);
+                redisPubSubGameMessagePublisher.userInfo(temp);
                 System.out.println("유저 List에 포함시켜서 날렸음");
                 break;
             }
@@ -227,4 +240,19 @@ public class GameSession {
         Player player = players[nicknameToPlayerNumber.get(sender).intValue()];
         return player.isEliminated();
     }
+
+    public void publishUserPersonalStatus(String nickname) {
+        Player player = players[nicknameToPlayerNumber.get(nickname).intValue()];
+        redisPubSubGameMessagePublisher.userInfoPersonal(player);
+    }
+
+//    public MeogajoaMessage.GameUserListResponse getUserList() {
+//        MeogajoaMessage.GameUserListResponse response = MeogajoaMessage.GameUserListResponse.builder()
+//                .type(MessageType.GAME_USER_LIST)
+//                .id(id)
+//                .blackTeam(blackTeam)
+//                .whiteTeam(whiteTeam)
+//                .eliminated(eliminated)
+//                .build();
+//    }
 }

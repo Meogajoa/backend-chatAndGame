@@ -149,7 +149,7 @@ public class GameSessionManager implements GameSessionListener {
             }
         });
 
-        redisPubSubGameMessagePublisher.UserInfo(players);
+        redisPubSubGameMessagePublisher.userInfo(players);
 
 
     }
@@ -253,4 +253,25 @@ public class GameSessionManager implements GameSessionListener {
 
         return gameSession.isEliminated(sender);
     }
+
+    public void publishUserPeronalStatus(String gameId, String nickname) {
+        GameSession gameSession = gameSessionMap.get(gameId);
+        if (gameSession == null) {
+            System.out.println("게임이 존재하지 않습니다.");
+            return;
+        }
+
+        gameSession.publishUserPersonalStatus(nickname);
+    }
+
+//    public void publishUserList(String gameId) {
+//        GameSession gameSession = gameSessionMap.get(gameId);
+//        if (gameSession == null) {
+//            System.out.println("게임이 존재하지 않습니다.");
+//            return;
+//        }
+//
+//        MeogajoaMessage.GameUserListResponse userListResponse = gameSession.getUserList();
+//        redisPubSubGameMessagePublisher.userListInfo(userListResponse);
+//    }
 }
