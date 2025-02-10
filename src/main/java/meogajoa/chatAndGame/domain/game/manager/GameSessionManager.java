@@ -185,6 +185,8 @@ public class GameSessionManager implements GameSessionListener {
 
         redisPubSubGameMessagePublisher.gameStart(gameSystemResponse);
 
+        System.out.println("게임 id tracking : " + gameId);
+
         GameSession gameSession = new GameSession(
                 gameId,
                 gameLogicExecutor,
@@ -195,6 +197,7 @@ public class GameSessionManager implements GameSessionListener {
                 this,
                 spyMapping
         );
+
         gameSessionMap.put(gameId, gameSession);
 
         gameRunningExecutor.submit(() -> {
@@ -205,6 +208,7 @@ public class GameSessionManager implements GameSessionListener {
             }
         });
 
+        publishGameUserList(gameId);
         redisPubSubGameMessagePublisher.userInfo(players);
     }
 
@@ -319,7 +323,7 @@ public class GameSessionManager implements GameSessionListener {
     }
 
 
-    public void publishUserList(String gameId) {
+    public void publishGameUserList(String gameId) {
         GameSession gameSession = gameSessionMap.get(gameId);
         if (gameSession == null) {
             System.out.println("게임이 존재하지 않습니다.");

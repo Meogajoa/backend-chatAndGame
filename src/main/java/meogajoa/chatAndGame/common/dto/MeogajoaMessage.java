@@ -173,6 +173,7 @@ public class MeogajoaMessage {
         private String id;
         private List<Long> blackTeam;
         private List<Long> whiteTeam;
+        private List<Long> redTeam;
         private List<Long> eliminated;
     }
 }

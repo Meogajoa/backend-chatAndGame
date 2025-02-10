@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class GameSession {
-    private final String id;
+    private String id;
     private final ThreadPoolTaskExecutor executor;
     private final LinkedBlockingQueue<MeogajoaMessage.GameMQRequest> requestQueue = new LinkedBlockingQueue<>();
     private Long dayCount;
@@ -51,7 +51,7 @@ public class GameSession {
         this.executor = executor;
         this.dayCount = 0L;
         this.dayOrNight = "NIGHT";
-        this.players = new Player[9];
+        this.players = new Player[11];
         this.surviveCount = 8L;
         this.gameSessionListener = gameSessionListener;
 
@@ -61,6 +61,7 @@ public class GameSession {
 
         this.blackTeam = new ArrayList<>();
         this.whiteTeam = new ArrayList<>();
+        this.redTeam = new ArrayList<>();
         this.eliminated = new ArrayList<>();
 
         this.personalChatLogMap = new HashMap<>();
@@ -263,6 +264,7 @@ public class GameSession {
                 .id(id)
                 .blackTeam(blackTeam)
                 .whiteTeam(whiteTeam)
+                .redTeam(redTeam)
                 .eliminated(eliminated)
                 .build();
     }

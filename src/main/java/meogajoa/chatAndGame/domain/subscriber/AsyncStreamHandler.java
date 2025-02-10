@@ -69,7 +69,7 @@ public class AsyncStreamHandler {
                 case "GAME_USER_LIST":{
                     String gameId = record.getValue().get("gameId");
                     System.out.println("게임 유저 리스트 메시지를 받았습니다.");
-                    gameSessionManager.publishUserList(gameId);
+                    gameSessionManager.publishGameUserList(gameId);
                     break;
                 }
                 case "GAME_DAY_OR_NIGHT": {
