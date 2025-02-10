@@ -65,13 +65,11 @@ public class GameSession {
         this.chatLogMap = new HashMap<>();
 
         for (int i = 1; i <= 4; i++) {
-            this.blackTeam.add((long) i);
-            this.players[i] = players.get(i - 1);
+            this.whiteTeam.add((long) i);
         }
 
         for (int i = 5; i <= 8; i++) {
-            this.whiteTeam.add((long) i);
-            this.players[i] = players.get(i - 1);
+            this.blackTeam.add((long) i);
         }
 
         for (Player player : players) {
