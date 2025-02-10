@@ -80,10 +80,9 @@ public class GameSessionManager implements GameSessionListener {
         }
 
         String nicknameKey = "room:" + gameId + ":users";
-
         Set<String> members = stringRedisTemplate.opsForSet().members(nicknameKey);
         stringRedisTemplate.opsForHash().entries("room:" + gameId);
-        if (members == null || members.size() < 8) {
+        if (members == null || members.size() < 9) {
             System.out.println("게임 참가 인원이 부족합니다.");
             return;
         }
@@ -92,25 +91,38 @@ public class GameSessionManager implements GameSessionListener {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 방입니다."));
 
         AtomicLong playerNumberGenerator = new AtomicLong(1);
-
         room.setPlaying(true);
         redisRoomRepository.save(room);
 
         List<String> authorizations = customRedisRoomRepository.getUserSessionIdInRoom(gameId);
-
-        for(String member : authorizations) {
+        for (String member : authorizations) {
             customRedisSessionRepository.setUserState(member, State.IN_GAME, gameId);
         }
-
 
         List<String> membersList = new ArrayList<>(members);
         Collections.shuffle(membersList);
 
-        List<String> whiteTeamNicknames = membersList.subList(0, 4);
-        List<String> blackTeamNicknames = membersList.subList(4, 8);
+        
+        List<String> whiteTeamNicknames = membersList.subList(0, 3);
+        List<String> blackTeamNicknames = membersList.subList(3, 6);
+        List<String> redTeamNicknames = membersList.subList(6, 9);
 
-        int whiteSpyIndex = new Random().nextInt(4);
-        int blackSpyIndex = new Random().nextInt(4);
+
+        List<TeamColor> allTeams = Arrays.asList(TeamColor.RED, TeamColor.WHITE, TeamColor.BLACK);
+        List<TeamColor> spyTeams = new ArrayList<>(allTeams);
+        Collections.shuffle(spyTeams);
+        spyTeams = spyTeams.subList(0, 2);
+        System.out.println("선택된 스파이 팀: " + spyTeams);
+
+        HashMap<TeamColor, TeamColor> spyMapping = new HashMap<>();
+        if (spyTeams.size() == 2) {
+            spyMapping.put(spyTeams.get(0), spyTeams.get(1));
+            spyMapping.put(spyTeams.get(1), spyTeams.get(0));
+        }
+
+        int whiteSpyIndex = spyTeams.contains(TeamColor.WHITE) ? new Random().nextInt(3) : -1;
+        int blackSpyIndex = spyTeams.contains(TeamColor.BLACK) ? new Random().nextInt(3) : -1;
+        int redSpyIndex   = spyTeams.contains(TeamColor.RED)   ? new Random().nextInt(3) : -1;
 
         List<Player> players = new ArrayList<>();
 
@@ -142,6 +154,20 @@ public class GameSessionManager implements GameSessionListener {
             players.add(player);
         }
 
+        for (int i = 0; i < redTeamNicknames.size(); i++) {
+            String nickname = redTeamNicknames.get(i);
+            boolean isSpy = (i == redSpyIndex);
+            Player player = new Player(
+                    playerNumberGenerator.getAndIncrement(),
+                    nickname,
+                    TeamColor.RED,
+                    1000L,
+                    isSpy,
+                    false
+            );
+            players.add(player);
+        }
+
         Map<String, Long> nicknameToPlayerNumber = new HashMap<>();
         Map<Long, String> playerNumberToNickname = new HashMap<>();
         for (Player player : players) {
@@ -159,7 +185,16 @@ public class GameSessionManager implements GameSessionListener {
 
         redisPubSubGameMessagePublisher.gameStart(gameSystemResponse);
 
-        GameSession gameSession = new GameSession(gameId, gameLogicExecutor, players, redisPubSubGameMessagePublisher, nicknameToPlayerNumber, playerNumberToNickname,this);
+        GameSession gameSession = new GameSession(
+                gameId,
+                gameLogicExecutor,
+                players,
+                redisPubSubGameMessagePublisher,
+                nicknameToPlayerNumber,
+                playerNumberToNickname,
+                this,
+                spyMapping
+        );
         gameSessionMap.put(gameId, gameSession);
 
         gameRunningExecutor.submit(() -> {
@@ -171,8 +206,6 @@ public class GameSessionManager implements GameSessionListener {
         });
 
         redisPubSubGameMessagePublisher.userInfo(players);
-
-
     }
 
     public String findNicknameByPlayerNumber(String gameId, Long playerNumber) {
@@ -439,5 +472,22 @@ public class GameSessionManager implements GameSessionListener {
         ChatLogResponse chatLogResponse = ChatLogResponse.builder().type(MessageType.CHAT_LOGS).id(gameID).chatLogs(chatLog).build();
         redisPubSubChatPublisher.publishEliminatedChatList(chatLogResponse);
 
+    }
+
+    public void publishRedChat(String gameID, String sender) {
+        GameSession gameSession = gameSessionMap.get(gameID);
+        if (gameSession == null) {
+            System.out.println("게임이 존재하지 않습니다.");
+            return;
+        }
+
+        if(!gameSession.isEliminated(sender)){
+            System.out.println("탈락하지 않은 유저입니다.");
+            return;
+        }
+
+        List<ChatLog> chatLog = gameSession.getRedChatLogs();
+        ChatLogResponse chatLogResponse = ChatLogResponse.builder().type(MessageType.CHAT_LOGS).id(gameID).chatLogs(chatLog).build();
+        redisPubSubChatPublisher.publishRedChatList(chatLogResponse);
     }
 }

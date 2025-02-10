@@ -54,6 +54,9 @@ public class AsyncStreamHandler {
                 case "WHITE_CHAT":
                     handleWhiteChat(record);
                     break;
+                case "RED_CHAT":
+                    handleWhiteChat(record);
+                    break;
                 case "ELIMINATED_CHAT":
                     handleEliminatedChat(record);
                     break;
@@ -91,6 +94,12 @@ public class AsyncStreamHandler {
                     String gameID = record.getValue().get("gameId");
                     String sender = record.getValue().get("sender");
                     gameSessionManager.publishWhiteChat(gameID, sender);
+                    break;
+                }
+                case "GET_GAME_CHAT_RED": {
+                    String gameID = record.getValue().get("gameId");
+                    String sender = record.getValue().get("sender");
+                    gameSessionManager.publishRedChat(gameID, sender);
                     break;
                 }
                 case "GET_GAME_CHAT_ELIMINATED": {

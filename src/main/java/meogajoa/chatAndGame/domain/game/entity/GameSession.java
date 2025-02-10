@@ -30,6 +30,7 @@ public class GameSession {
     private Long surviveCount;
     private List<Long> blackTeam;
     private List<Long> whiteTeam;
+    private List<Long> redTeam;
     private List<Long> eliminated;
     private Map<String, Long> nicknameToPlayerNumber;
     private Map<Long, String> playerNumberToNickname;
@@ -38,13 +39,14 @@ public class GameSession {
     private final GameSessionListener gameSessionListener;
     private Map<String, List<PersonalChatLog>> personalChatLogMap;
     private Map<String, List<ChatLog>> chatLogMap;
+    private Map<TeamColor, TeamColor> spyColorMap;
 
 
     private AtomicBoolean processing = new AtomicBoolean(false);
 
     private volatile boolean isGameRunning = true;
 
-    public GameSession(String id, @Qualifier("gameLogicExecutor") ThreadPoolTaskExecutor executor, List<Player> players, RedisPubSubGameMessagePublisher redisPubSubGameMessagePublisher, Map<String, Long> nicknameToPlayerNumber, Map<Long, String> playerNumberToNickname, GameSessionListener gameSessionListener) {
+    public GameSession(String id, @Qualifier("gameLogicExecutor") ThreadPoolTaskExecutor executor, List<Player> players, RedisPubSubGameMessagePublisher redisPubSubGameMessagePublisher, Map<String, Long> nicknameToPlayerNumber, Map<Long, String> playerNumberToNickname, GameSessionListener gameSessionListener, Map<TeamColor, TeamColor> spyColorMap) {
         this.id = id;
         this.executor = executor;
         this.dayCount = 0L;
@@ -63,13 +65,18 @@ public class GameSession {
 
         this.personalChatLogMap = new HashMap<>();
         this.chatLogMap = new HashMap<>();
+        this.spyColorMap = spyColorMap;
 
-        for (int i = 1; i <= 4; i++) {
+        for (int i = 1; i <= 3; i++) {
             this.whiteTeam.add((long) i);
         }
 
-        for (int i = 5; i <= 8; i++) {
+        for (int i = 4; i <= 6; i++) {
             this.blackTeam.add((long) i);
+        }
+
+        for (int i = 7; i <= 9; i++) {
+            this.redTeam.add((long) i);
         }
 
         for (Player player : players) {
@@ -359,5 +366,9 @@ public class GameSession {
 
     public List<ChatLog> getEliminatedChatLogs() {
         return chatLogMap.get("ELIMINATED");
+    }
+
+    public List<ChatLog> getRedChatLogs() {
+        return chatLogMap.get("RED");
     }
 }

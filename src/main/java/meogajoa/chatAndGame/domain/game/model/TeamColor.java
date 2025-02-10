@@ -5,7 +5,8 @@ import lombok.Getter;
 @Getter
 public enum TeamColor {
     BLACK("black"),
-    WHITE("white");
+    WHITE("white"),
+    RED("red");
 
     private final String value;
 
