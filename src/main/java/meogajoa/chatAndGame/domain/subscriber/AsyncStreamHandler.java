@@ -33,6 +33,8 @@ public class AsyncStreamHandler {
         try {
             String type = record.getValue().get("type");
 
+            if(record.getValue().get("sender") == null) return;
+
             switch(type) {
                 case "ROOM_INFO":
                     handleRoomInfoMessage(record);
@@ -77,6 +79,30 @@ public class AsyncStreamHandler {
                     String sender = record.getValue().get("sender");
                     System.out.println("받음 진입점");
                     gameSessionManager.publishGameChat(gameId, sender);
+                    break;
+                }
+                case "GET_GAME_CHAT_BLACK": {
+                    String gameID = record.getValue().get("gameId");
+                    String sender = record.getValue().get("sender");
+                    gameSessionManager.publishBlackChat(gameID, sender);
+                    break;
+                }
+                case "GET_GAME_CHAT_WHITE": {
+                    String gameID = record.getValue().get("gameId");
+                    String sender = record.getValue().get("sender");
+                    gameSessionManager.publishWhiteChat(gameID, sender);
+                    break;
+                }
+                case "GET_GAME_CHAT_ELIMINATED": {
+                    String gameID = record.getValue().get("gameId");
+                    String sender = record.getValue().get("sender");
+                    gameSessionManager.publishEliminatedChat(gameID, sender);
+                    break;
+                }
+                case "GET_GAME_CHAT_PERSONAL": {
+                    String gameID = record.getValue().get("gameId");
+                    String sender = record.getValue().get("sender");
+                    gameSessionManager.publishPersonalChat(gameID, sender);
                     break;
                 }
                 default:
