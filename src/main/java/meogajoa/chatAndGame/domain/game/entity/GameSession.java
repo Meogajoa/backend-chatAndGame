@@ -371,4 +371,17 @@ public class GameSession {
     public List<ChatLog> getRedChatLogs() {
         return chatLogMap.get("RED");
     }
+
+    public ChatLog redChat(String content, Long playerNumber) {
+        ChatLog chatLog = ChatLog.builder()
+                .id(String.valueOf(playerNumber))
+                .content(content)
+                .sender(playerNumber.toString())
+                .sendTime(LocalDateTime.now())
+                .build();
+
+        chatLogMap.computeIfAbsent("RED", k -> new ArrayList<>()).add(chatLog);
+
+        return chatLog;
+    }
 }

@@ -123,4 +123,24 @@ public class RedisPubSubChatPublisher {
             e.printStackTrace();
         }
     }
+
+    public void publishRedChatList(ChatLogResponse chatLogResponse) {
+        try {
+            String jsonString = objectMapper.writeValueAsString(chatLogResponse);
+
+            stringRedisTemplate.convertAndSend("pubsub:redChatList", jsonString);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void publishToRed(MeogajoaMessage.ChatPubSubResponse of) {
+        try {
+            String jsonString = objectMapper.writeValueAsString(of);
+
+            stringRedisTemplate.convertAndSend("pubsub:redChat", jsonString);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }

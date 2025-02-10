@@ -55,7 +55,7 @@ public class AsyncStreamHandler {
                     handleWhiteChat(record);
                     break;
                 case "RED_CHAT":
-                    handleWhiteChat(record);
+                    handleRedChat(record);
                     break;
                 case "ELIMINATED_CHAT":
                     handleEliminatedChat(record);
@@ -225,6 +225,21 @@ public class AsyncStreamHandler {
             if(chatLog == null) return;
 
             redisPubSubChatPublisher.publishToWhite(MeogajoaMessage.ChatPubSubResponse.of(id, chatLog));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void handleRedChat(MapRecord<String, String, String> record) {
+        try {
+            String id = record.getValue().get("id");
+            String content = record.getValue().get("content");
+            String sender = record.getValue().get("sender");
+
+            ChatLog chatLog = gameSessionManager.redChat(id, content, sender);
+            if(chatLog == null) return;
+
+            redisPubSubChatPublisher.publishToRed(MeogajoaMessage.ChatPubSubResponse.of(id, chatLog));
         } catch (Exception e) {
             e.printStackTrace();
         }

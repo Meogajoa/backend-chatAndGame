@@ -102,7 +102,7 @@ public class GameSessionManager implements GameSessionListener {
         List<String> membersList = new ArrayList<>(members);
         Collections.shuffle(membersList);
 
-        
+
         List<String> whiteTeamNicknames = membersList.subList(0, 3);
         List<String> blackTeamNicknames = membersList.subList(3, 6);
         List<String> redTeamNicknames = membersList.subList(6, 9);
@@ -489,5 +489,22 @@ public class GameSessionManager implements GameSessionListener {
         List<ChatLog> chatLog = gameSession.getRedChatLogs();
         ChatLogResponse chatLogResponse = ChatLogResponse.builder().type(MessageType.CHAT_LOGS).id(gameID).chatLogs(chatLog).build();
         redisPubSubChatPublisher.publishRedChatList(chatLogResponse);
+    }
+
+    public ChatLog redChat(String id, String content, String sender) {
+        GameSession gameSession = gameSessionMap.get(id);
+        if (gameSession == null) {
+            System.out.println("게임이 존재하지 않습니다.");
+            return null;
+        }
+
+        if(isEliminated(id, sender)){
+            System.out.println("탈락한 유저입니다.");
+            return null;
+        }
+
+        Long playerNumber = gameSession.findPlayerNumberByNickname(sender);
+
+        return gameSession.redChat(content, playerNumber);
     }
 }
