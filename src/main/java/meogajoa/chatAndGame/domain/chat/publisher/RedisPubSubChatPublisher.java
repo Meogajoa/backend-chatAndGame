@@ -28,6 +28,7 @@ public class RedisPubSubChatPublisher {
         try {
             String jsonString = objectMapper.writeValueAsString(chatPubSubResponse);
 
+            System.out.println("게임챗 중개WAS로 보냄");
             stringRedisTemplate.convertAndSend("pubsub:gameChat", jsonString);
         } catch (Exception e) {
             e.printStackTrace();

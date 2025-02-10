@@ -127,9 +127,12 @@ public class AsyncStreamHandler {
             String content = record.getValue().get("content");
             String sender = record.getValue().get("sender");
 
-            gameSessionManager.gameChat(id, content, sender);
+            ChatLog chatLog = gameSessionManager.gameChat(id, content, sender);
+            if(chatLog == null) return;
 
+            MeogajoaMessage.ChatPubSubResponse chatPubSubResponse = MeogajoaMessage.ChatPubSubResponse.of(id, chatLog);
 
+            redisPubSubChatPublisher.publishToGame(chatPubSubResponse);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -167,20 +170,10 @@ public class AsyncStreamHandler {
             String content = record.getValue().get("content");
             String sender = record.getValue().get("sender");
 
-            if(!gameSessionManager.isBlackTeam(id, sender)) return;
+            ChatLog chatLog = gameSessionManager.blackChat(id, content, sender);
+            if(chatLog == null) return;
 
-            Long senderNumber = gameSessionManager.findPlayerNumberByNickname(id, sender);
-            ChatLog chatLog = customRedisChatLogRepository.saveBlackChatLog(content, id, senderNumber);
-
-
-
-            MeogajoaMessage.ChatPubSubResponse chatPubSubResponse = MeogajoaMessage.ChatPubSubResponse.builder()
-                    .id(id)
-                    .chatLog(chatLog)
-                    .build();
-
-            redisPubSubChatPublisher.publishToBlack(chatPubSubResponse);
-
+            redisPubSubChatPublisher.publishToBlack(MeogajoaMessage.ChatPubSubResponse.of(id, chatLog));
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -193,17 +186,10 @@ public class AsyncStreamHandler {
             String content = record.getValue().get("content");
             String sender = record.getValue().get("sender");
 
-            if(!gameSessionManager.isWhiteTeam(id, sender)) return;
+            ChatLog chatLog = gameSessionManager.whiteChat(id, content, sender);
+            if(chatLog == null) return;
 
-            Long senderNumber = gameSessionManager.findPlayerNumberByNickname(id, sender);
-            ChatLog chatLog = customRedisChatLogRepository.saveWhiteChatLog(content, id, senderNumber);
-
-            MeogajoaMessage.ChatPubSubResponse chatPubSubResponse = MeogajoaMessage.ChatPubSubResponse.builder()
-                    .id(id)
-                    .chatLog(chatLog)
-                    .build();
-
-            redisPubSubChatPublisher.publishToWhite(chatPubSubResponse);
+            redisPubSubChatPublisher.publishToWhite(MeogajoaMessage.ChatPubSubResponse.of(id, chatLog));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -215,17 +201,10 @@ public class AsyncStreamHandler {
             String content = record.getValue().get("content");
             String sender = record.getValue().get("sender");
 
-            if(!gameSessionManager.isEliminated(id, sender)) return;
+            ChatLog chatLog = gameSessionManager.eliminatedChat(id, content, sender);
+            if(chatLog == null) return;
 
-            Long senderNumber = gameSessionManager.findPlayerNumberByNickname(id, sender);
-            ChatLog chatLog = customRedisChatLogRepository.saveEliminatedChatLog(content, id, senderNumber);
-
-            MeogajoaMessage.ChatPubSubResponse chatPubSubResponse = MeogajoaMessage.ChatPubSubResponse.builder()
-                    .id(id)
-                    .chatLog(chatLog)
-                    .build();
-
-            redisPubSubChatPublisher.publishToEliminated(chatPubSubResponse);
+            redisPubSubChatPublisher.publishToEliminated(MeogajoaMessage.ChatPubSubResponse.of(id, chatLog));
         } catch (Exception e) {
             e.printStackTrace();
         }

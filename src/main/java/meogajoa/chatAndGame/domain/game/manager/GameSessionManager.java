@@ -304,7 +304,7 @@ public class GameSessionManager implements GameSessionListener {
             return;
         }
 
-        List<ChatLog> chatLog = customRedisChatLogRepository.getGameChatLog(gameId);
+        List<ChatLog> chatLog = gameSession.getGameChatLogs();
         ChatLogResponse chatLogResponse = ChatLogResponse.builder().type(MessageType.CHAT_LOGS).id(gameId).chatLogs(chatLog).build();
         redisPubSubChatPublisher.publishGameChatList(chatLogResponse);
 
@@ -314,17 +314,17 @@ public class GameSessionManager implements GameSessionListener {
 
 
         if(gameSession.isBlackTeam(sender)){
-            List<ChatLog> blackChatLog = customRedisChatLogRepository.getBlackChatLog(gameId);
+            List<ChatLog> blackChatLog = gameSession.getBlackChatLogs();
             ChatLogResponse blackChatLogResponse = ChatLogResponse.builder().type(MessageType.CHAT_LOGS).id(gameId).chatLogs(blackChatLog).build();
             redisPubSubChatPublisher.publishBlackChatList(blackChatLogResponse);
         } else if(gameSession.isWhiteTeam(sender)) {
-            List<ChatLog> whiteChatLog = customRedisChatLogRepository.getWhiteChatLog(gameId);
+            List<ChatLog> whiteChatLog = gameSession.getWhiteChatLogs();
             ChatLogResponse whiteChatLogResponse = ChatLogResponse.builder().type(MessageType.CHAT_LOGS).id(gameId).chatLogs(whiteChatLog).build();
             redisPubSubChatPublisher.publishWhiteChatList(whiteChatLogResponse);
         }
 
         if(gameSession.isEliminated(sender)){
-            List<ChatLog> eliminatedChatLog = customRedisChatLogRepository.getEliminatedChatLog(gameId);
+            List<ChatLog> eliminatedChatLog = gameSession.getEliminatedChatLogs();
             ChatLogResponse eliminatedChatLogResponse = ChatLogResponse.builder().type(MessageType.CHAT_LOGS).id(gameId).chatLogs(eliminatedChatLog).build();
             redisPubSubChatPublisher.publishEliminatedChatList(eliminatedChatLogResponse);
         }
@@ -332,23 +332,71 @@ public class GameSessionManager implements GameSessionListener {
 
     }
 
-    public void gameChat(String id, String content, String sender) {
+    public ChatLog gameChat(String id, String content, String sender) {
         GameSession gameSession = gameSessionMap.get(id);
         if (gameSession == null) {
             System.out.println("게임이 존재하지 않습니다.");
-            return;
+            return null;
+        }
+
+        if(isEliminated(id, sender)){
+            System.out.println("탈락한 유저입니다.");
+            return null;
         }
 
         Long playerNumber = gameSession.findPlayerNumberByNickname(sender);
 
-        ChatLog chatLog = customRedisChatLogRepository.saveGameChatLog(content, id, playerNumber.toString());
+        return gameSession.gameChat(content, playerNumber);
+    }
 
-        MeogajoaMessage.ChatPubSubResponse chatPubSubResponse = MeogajoaMessage.ChatPubSubResponse.builder()
-                .id(id)
-                .chatLog(chatLog)
-                .build();
+    public ChatLog blackChat(String id, String content, String sender) {
+        GameSession gameSession = gameSessionMap.get(id);
+        if (gameSession == null) {
+            System.out.println("게임이 존재하지 않습니다.");
+            return null;
+        }
 
-        redisPubSubChatPublisher.publishToGame(chatPubSubResponse);
+        if(isEliminated(id, sender)){
+            System.out.println("탈락한 유저입니다.");
+            return null;
+        }
 
+        Long playerNumber = gameSession.findPlayerNumberByNickname(sender);
+
+        return gameSession.blackChat(content, playerNumber);
+    }
+
+    public ChatLog whiteChat(String id, String content, String sender) {
+        GameSession gameSession = gameSessionMap.get(id);
+        if (gameSession == null) {
+            System.out.println("게임이 존재하지 않습니다.");
+            return null;
+        }
+
+        if(isEliminated(id, sender)){
+            System.out.println("탈락한 유저입니다.");
+            return null;
+        }
+
+        Long playerNumber = gameSession.findPlayerNumberByNickname(sender);
+
+        return gameSession.whiteChat(content, playerNumber);
+    }
+
+    public ChatLog eliminatedChat(String id, String content, String sender) {
+        GameSession gameSession = gameSessionMap.get(id);
+        if (gameSession == null) {
+            System.out.println("게임이 존재하지 않습니다.");
+            return null;
+        }
+
+        if(!isEliminated(id, sender)){
+            System.out.println("탈락하지 않은 유저입니다.");
+            return null;
+        }
+
+        Long playerNumber = gameSession.findPlayerNumberByNickname(sender);
+
+        return gameSession.eliminatedChat(content, playerNumber);
     }
 }

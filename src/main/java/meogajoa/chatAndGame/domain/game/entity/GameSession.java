@@ -3,6 +3,7 @@ package meogajoa.chatAndGame.domain.game.entity;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import meogajoa.chatAndGame.common.dto.MeogajoaMessage;
 import meogajoa.chatAndGame.common.model.MessageType;
+import meogajoa.chatAndGame.domain.chat.dto.ChatLog;
 import meogajoa.chatAndGame.domain.chat.dto.PersonalChatLog;
 import meogajoa.chatAndGame.domain.game.listener.GameSessionListener;
 import meogajoa.chatAndGame.domain.game.model.MiniGameType;
@@ -36,6 +37,7 @@ public class GameSession {
     private final RedisPubSubGameMessagePublisher redisPubSubGameMessagePublisher;
     private final GameSessionListener gameSessionListener;
     private Map<String, List<PersonalChatLog>> personalChatLogMap;
+    private Map<String, List<ChatLog>> chatLogMap;
 
 
     private AtomicBoolean processing = new AtomicBoolean(false);
@@ -60,6 +62,7 @@ public class GameSession {
         this.eliminated = new ArrayList<>();
 
         this.personalChatLogMap = new HashMap<>();
+        this.chatLogMap = new HashMap<>();
 
         for (int i = 1; i <= 4; i++) {
             this.blackTeam.add((long) i);
@@ -100,7 +103,7 @@ public class GameSession {
                 }
 
                 if (request.getType().equals(MessageType.BUTTON_CLICK) && this.miniGame instanceof ButtonGame) {
-                    handleButtonClickReuqest(request);
+                    handleButtonClickRequest(request);
                 }
             }
         } catch (InterruptedException e) {
@@ -114,7 +117,7 @@ public class GameSession {
         }
     }
 
-    private void handleButtonClickReuqest(MeogajoaMessage.GameMQRequest request) {
+    private void handleButtonClickRequest(MeogajoaMessage.GameMQRequest request) {
         switch (request.getContent()) {
             case "twenty" ->
                     this.miniGame.clickButton(nicknameToPlayerNumber.get(request.getSender()), request.getContent());
@@ -289,5 +292,74 @@ public class GameSession {
         }
 
         return personalChatLogs;
+    }
+
+    public ChatLog blackChat(String content, Long playerNumber) {
+        ChatLog chatLog = ChatLog.builder()
+                .id(String.valueOf(playerNumber))
+                .content(content)
+                .sender(playerNumber.toString())
+                .sendTime(LocalDateTime.now())
+                .build();
+
+        chatLogMap.computeIfAbsent("BLACK", k -> new ArrayList<>()).add(chatLog);
+
+        return chatLog;
+    }
+
+    public ChatLog whiteChat(String content, Long playerNumber) {
+
+        ChatLog chatLog = ChatLog.builder()
+                .id(String.valueOf(playerNumber))
+                .content(content)
+                .sender(playerNumber.toString())
+                .sendTime(LocalDateTime.now())
+                .build();
+
+        chatLogMap.computeIfAbsent("WHITE", k -> new ArrayList<>()).add(chatLog);
+
+        return chatLog;
+    }
+
+    public ChatLog eliminatedChat(String content, Long playerNumber) {
+        ChatLog chatLog = ChatLog.builder()
+                .id(String.valueOf(playerNumber))
+                .content(content)
+                .sender(playerNumber.toString())
+                .sendTime(LocalDateTime.now())
+                .build();
+
+        chatLogMap.computeIfAbsent("ELIMINATED", k -> new ArrayList<>()).add(chatLog);
+
+        return chatLog;
+    }
+
+    public ChatLog gameChat(String content, Long playerNumber) {
+        ChatLog chatLog = ChatLog.builder()
+                .id(String.valueOf(playerNumber))
+                .content(content)
+                .sender(playerNumber.toString())
+                .sendTime(LocalDateTime.now())
+                .build();
+
+        chatLogMap.computeIfAbsent("GAME", k -> new ArrayList<>()).add(chatLog);
+
+        return chatLog;
+    }
+
+    public List<ChatLog> getGameChatLogs() {
+        return chatLogMap.get("GAME");
+    }
+
+    public List<ChatLog> getBlackChatLogs() {
+        return chatLogMap.get("BLACK");
+    }
+
+    public List<ChatLog> getWhiteChatLogs() {
+        return chatLogMap.get("WHITE");
+    }
+
+    public List<ChatLog> getEliminatedChatLogs() {
+        return chatLogMap.get("ELIMINATED");
     }
 }
