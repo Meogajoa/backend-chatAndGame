@@ -386,4 +386,9 @@ public class GameSession {
 
         return chatLog;
     }
+
+    public boolean isRedTeam(String sender) {
+        Player player = players[nicknameToPlayerNumber.get(sender).intValue()];
+        return player.getTeamColor().equals(TeamColor.RED);
+    }
 }

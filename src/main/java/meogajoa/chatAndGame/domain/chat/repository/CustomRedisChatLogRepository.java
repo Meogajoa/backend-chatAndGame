@@ -173,4 +173,7 @@ public class CustomRedisChatLogRepository {
     }
 
 
+    public void deleteRoomChatLog(String gameId) {
+        redisTemplate.delete(GAME_CHAT_LOG_KEY + gameId);
+    }
 }

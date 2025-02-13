@@ -90,6 +90,10 @@ public class GameSessionManager implements GameSessionListener {
         Room room = redisRoomRepository.findById(gameId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 방입니다."));
 
+        customRedisChatLogRepository.deleteRoomChatLog(gameId);
+
+
+
         AtomicLong playerNumberGenerator = new AtomicLong(1);
         room.setPlaying(true);
         redisRoomRepository.save(room);
@@ -421,6 +425,11 @@ public class GameSessionManager implements GameSessionListener {
             return null;
         }
 
+        if(!gameSession.isBlackTeam(sender)){
+            System.out.println("블랙팀이 아닙니다.");
+            return null;
+        }
+
         Long playerNumber = gameSession.findPlayerNumberByNickname(sender);
 
         return gameSession.blackChat(content, playerNumber);
@@ -430,6 +439,11 @@ public class GameSessionManager implements GameSessionListener {
         GameSession gameSession = gameSessionMap.get(id);
         if (gameSession == null) {
             System.out.println("게임이 존재하지 않습니다.");
+            return null;
+        }
+
+        if(!gameSession.isWhiteTeam(sender)){
+            System.out.println("화이트팀이 아닙니다.");
             return null;
         }
 
@@ -485,8 +499,8 @@ public class GameSessionManager implements GameSessionListener {
             return;
         }
 
-        if(!gameSession.isEliminated(sender)){
-            System.out.println("탈락하지 않은 유저입니다.");
+        if(!gameSession.isRedTeam(sender)){
+            System.out.println("레드팀이 아닙니다.");
             return;
         }
 
