@@ -19,7 +19,8 @@ public enum MessageType {
     GET_GAME_CHAT("GET_GAME_CHAT"),
     CHAT_LOGS("CHAT_LOGS"),
     PERSONAL_CHAT_LOGS("PERSONAL_CHAT_LOGS"),
-    VOTE_GAME_STATUS("VOTE_GAME_STATUS");
+    VOTE_GAME_STATUS("VOTE_GAME_STATUS"),
+    VOTE("VOTE");
 
 
     private final String value;

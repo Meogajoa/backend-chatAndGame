@@ -112,6 +112,10 @@ public class GameSession implements MiniGameListener {
                 if (request.getType().equals(MessageType.BUTTON_CLICK) && this.miniGame instanceof ButtonGame) {
                     handleButtonClickRequest(request);
                 }
+
+                if(request.getType().equals(MessageType.VOTE) && this.miniGame instanceof VoteGame){
+                    handleVoteRequest(request);
+                }
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -122,6 +126,10 @@ public class GameSession implements MiniGameListener {
                 triggerProcessingIfNeeded();
             }
         }
+    }
+
+    private void handleVoteRequest(MeogajoaMessage.GameMQRequest request) {
+        this.miniGame.clickButton(nicknameToPlayerNumber.get(request.getSender()), request.getContent());
     }
 
     private void handleButtonClickRequest(MeogajoaMessage.GameMQRequest request) {
@@ -226,7 +234,7 @@ public class GameSession implements MiniGameListener {
         }
 
         goToTheNext();
-        targetTime = ZonedDateTime.now(ZoneOffset.UTC).plusSeconds(10);
+        targetTime = ZonedDateTime.now(ZoneOffset.UTC).plusSeconds(30);
 
         List<Long> candidates = new ArrayList<>();
         for (int i = 1; i <= 9; i++) {

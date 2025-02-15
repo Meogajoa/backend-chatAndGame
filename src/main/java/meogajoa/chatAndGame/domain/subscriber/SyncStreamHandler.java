@@ -38,8 +38,13 @@ public class SyncStreamHandler {
                 case "BUTTON_CLICK":{
                     MeogajoaMessage.GameMQRequest gameMQRequest = objectMapper.convertValue(record.getValue(), MeogajoaMessage.GameMQRequest.class);
                     gameSessionManager.addRequest(gameMQRequest);
+                    break;
                 }
-
+                case "VOTE":{
+                    MeogajoaMessage.GameMQRequest gameMQRequest = objectMapper.convertValue(record.getValue(), MeogajoaMessage.GameMQRequest.class);
+                    gameSessionManager.addRequest(gameMQRequest);
+                    break;
+                }
                 default:
                     break;
             }
