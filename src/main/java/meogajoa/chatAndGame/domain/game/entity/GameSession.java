@@ -6,6 +6,7 @@ import meogajoa.chatAndGame.common.model.MessageType;
 import meogajoa.chatAndGame.domain.chat.dto.ChatLog;
 import meogajoa.chatAndGame.domain.chat.dto.PersonalChatLog;
 import meogajoa.chatAndGame.domain.game.listener.GameSessionListener;
+import meogajoa.chatAndGame.domain.game.listener.MiniGameListener;
 import meogajoa.chatAndGame.domain.game.model.MiniGameType;
 import meogajoa.chatAndGame.domain.game.model.TeamColor;
 import meogajoa.chatAndGame.domain.game.publisher.RedisPubSubGameMessagePublisher;
@@ -20,7 +21,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class GameSession {
+public class GameSession implements MiniGameListener {
     private String id;
     private final ThreadPoolTaskExecutor executor;
     private final LinkedBlockingQueue<MeogajoaMessage.GameMQRequest> requestQueue = new LinkedBlockingQueue<>();
@@ -146,9 +147,22 @@ public class GameSession {
         requestQueue.clear();
     }
 
+    public void goToTheNext() {
+        if(dayOrNight.equals("NIGHT")){
+            dayCount++;
+            dayOrNight = "DAY";
+            redisPubSubGameMessagePublisher.broadCastDayOrNightNotice(id, dayCount, dayOrNight);
+        } else {
+            dayOrNight = "NIGHT";
+            redisPubSubGameMessagePublisher.broadCastDayOrNightNotice(id, dayCount, dayOrNight);
+        }
+    }
+
+
+
     public void startGame() throws JsonProcessingException {
         //redisPubSubGameMessagePublisher.broadCastUserInfoList(players);
-        redisPubSubGameMessagePublisher.broadCastDayNotice(id, 0L, "NIGHT");
+        redisPubSubGameMessagePublisher.broadCastDayOrNightNotice(id, dayCount, dayOrNight);
 
         ZonedDateTime targetTime = ZonedDateTime.now(ZoneOffset.UTC).plusSeconds(20);
 
@@ -169,9 +183,11 @@ public class GameSession {
             }
         }
 
-        this.dayCount++;
-        dayOrNight = "DAY";
-        redisPubSubGameMessagePublisher.broadCastDayNotice(id, this.dayCount, dayOrNight);
+//        this.dayCount++;
+//        dayOrNight = "DAY";
+//        redisPubSubGameMessagePublisher.broadCastDayNotice(id, this.dayCount, dayOrNight);
+
+        goToTheNext();
         redisPubSubGameMessagePublisher.broadCastMiniGameEndNotice(targetTime, MiniGameType.BUTTON_CLICK, id);
 
         targetTime = ZonedDateTime.now(ZoneOffset.UTC).plusSeconds(30);
@@ -209,13 +225,41 @@ public class GameSession {
             }
         }
 
+        goToTheNext();
+        targetTime = ZonedDateTime.now(ZoneOffset.UTC).plusSeconds(10);
+
+        List<Long> candidates = new ArrayList<>();
+        for (int i = 1; i <= 9; i++) {
+            if(players[i].isEliminated()) continue;
+            candidates.add((long) i);
+        }
+
+        this.miniGame = new VoteGame(candidates, redisPubSubGameMessagePublisher, id);
+        redisPubSubGameMessagePublisher.broadCastMiniGameStartNotice(targetTime, MiniGameType.VOTE_GAME, id);
+
+        while(true){
+            ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+            if(!now.isBefore(targetTime)){
+                break;
+            }
+
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+        this.miniGame.publishCurrentStatus();
+
+
         gameSessionListener.onGameSessionEnd(id);
 
 
     }
 
     public void publishGameStatus() {
-        redisPubSubGameMessagePublisher.broadCastDayNotice(id, dayCount, dayOrNight);
+        redisPubSubGameMessagePublisher.broadCastDayOrNightNotice(id, dayCount, dayOrNight);
     }
 
     public void publishUserStatus(String nickname) {
@@ -390,5 +434,10 @@ public class GameSession {
     public boolean isRedTeam(String sender) {
         Player player = players[nicknameToPlayerNumber.get(sender).intValue()];
         return player.getTeamColor().equals(TeamColor.RED);
+    }
+
+    @Override
+    public void onGameEnd() {
+
     }
 }

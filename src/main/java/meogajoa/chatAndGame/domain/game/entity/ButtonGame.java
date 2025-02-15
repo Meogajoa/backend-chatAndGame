@@ -1,5 +1,6 @@
 package meogajoa.chatAndGame.domain.game.entity;
 
+import lombok.val;
 import meogajoa.chatAndGame.domain.game.publisher.RedisPubSubGameMessagePublisher;
 
 import java.util.ArrayList;

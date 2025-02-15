@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +28,7 @@ public class RedisPubSubGameMessagePublisher {
     private final static String GAME_MINI_GAME_NOTICE_KEY = "pubsub:miniGameNotice";
     private final static String BUTTON_GAME_STATUS_KEY = "pubsub:buttonGameStatus";
     private final static String GAME_USER_LIST_INFO_KEY = "pubsub:gameUserListInfo";
+    private final static String VOTE_GAME_STATUS_KEY = "pubsub:voteGameStatus";
 
     public void gameStart(MeogajoaMessage.GameSystemResponse gameSystemResponse) {
         try {
@@ -57,7 +59,7 @@ public class RedisPubSubGameMessagePublisher {
 //        }
 //    }
 
-    public void broadCastDayNotice(String gameId, Long day, String dayOrNight) {
+    public void broadCastDayOrNightNotice(String gameId, Long day, String dayOrNight) {
         try {
             MeogajoaMessage.GameDayOrNightResponse gameDayOrNightResponse = MeogajoaMessage.GameDayOrNightResponse.builder()
                     .id(gameId)
@@ -110,8 +112,8 @@ public class RedisPubSubGameMessagePublisher {
     public void publishButtonGameStatus(List<Long> twentyButtons, List<Long> fiftyButtons, List<Long> hundredButtons, String gameId) {
         try {
             MeogajoaMessage.ButtonGameStatusResponse buttonGameStatusResponse = MeogajoaMessage.ButtonGameStatusResponse.builder()
-                    .id(gameId)
                     .type(MessageType.BUTTON_GAME_STATUS)
+                    .id(gameId)
                     .sender("SYSTEM")
                     .twentyButtons(twentyButtons)
                     .fiftyButtons(fiftyButtons)
@@ -122,7 +124,7 @@ public class RedisPubSubGameMessagePublisher {
 
             stringRedisTemplate.convertAndSend(BUTTON_GAME_STATUS_KEY, jsonString);
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 
@@ -157,6 +159,23 @@ public class RedisPubSubGameMessagePublisher {
         try{
             String jsonString = objectMapper.writeValueAsString(player);
             stringRedisTemplate.convertAndSend(GAME_USER_INFO_PERSONAL_KEY, jsonString);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void publishVoteGameStatus(String id, Map<String, Long> result) {
+        try {
+            MeogajoaMessage.VoteGameStatusResponse voteGameStatusResponse = MeogajoaMessage.VoteGameStatusResponse.builder()
+                    .type(MessageType.VOTE_GAME_STATUS)
+                    .id(id)
+                    .sender("SYSTEM")
+                    .result(result)
+                    .build();
+
+            String jsonString = objectMapper.writeValueAsString(voteGameStatusResponse);
+
+            stringRedisTemplate.convertAndSend(VOTE_GAME_STATUS_KEY, jsonString);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
