@@ -407,23 +407,34 @@ public class GameSession implements MiniGameListener {
     }
 
     public List<ChatLog> getGameChatLogs() {
-        return chatLogMap.get("GAME");
+        List<ChatLog> chatLogs = chatLogMap.get("GAME");
+        if(chatLogs == null) chatLogs = new ArrayList<>();
+        return chatLogs;
     }
 
     public List<ChatLog> getBlackChatLogs() {
-        return chatLogMap.get("BLACK");
+        List<ChatLog> chatLogs = chatLogMap.get("BLACK");
+        if(chatLogs == null) chatLogs = new ArrayList<>();
+        return chatLogs;
+        //return chatLogMap.get("BLACK");
     }
 
     public List<ChatLog> getWhiteChatLogs() {
-        return chatLogMap.get("WHITE");
+        List<ChatLog> chatLogs = chatLogMap.get("WHITE");
+        if(chatLogs == null) chatLogs = new ArrayList<>();
+        return chatLogs;
     }
 
     public List<ChatLog> getEliminatedChatLogs() {
-        return chatLogMap.get("ELIMINATED");
+        List<ChatLog> chatLogs = chatLogMap.get("ELIMINATED");
+        if(chatLogs == null) chatLogs = new ArrayList<>();
+        return chatLogs;
     }
 
     public List<ChatLog> getRedChatLogs() {
-        return chatLogMap.get("RED");
+        List<ChatLog> chatLogs = chatLogMap.get("RED");
+        if(chatLogs == null) chatLogs = new ArrayList<>();
+        return chatLogs;
     }
 
     public ChatLog redChat(String content, Long playerNumber) {
