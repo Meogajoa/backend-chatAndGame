@@ -323,17 +323,17 @@ public class GameSession implements MiniGameListener {
 
 
     public PersonalChatLog savePersonalChatLog(String content, Long sender, Long receiver) {
-        String id = Math.min(sender, receiver) + ":" + Math.max(sender, receiver);
+        String key = Math.min(sender, receiver) + ":" + Math.max(sender, receiver);
 
         PersonalChatLog personalChatLog = PersonalChatLog.builder()
-                .id(id)
+                .id(UUID.randomUUID().toString())
                 .sender(sender.toString())
                 .receiver(receiver.toString())
                 .content(content)
                 .sendTime(LocalDateTime.now())
                 .build();
 
-        personalChatLogMap.computeIfAbsent(id, k -> new ArrayList<>()).add(personalChatLog);
+        personalChatLogMap.computeIfAbsent(key, k -> new ArrayList<>()).add(personalChatLog);
 
         return personalChatLog;
     }
@@ -355,7 +355,7 @@ public class GameSession implements MiniGameListener {
 
     public ChatLog blackChat(String content, Long playerNumber) {
         ChatLog chatLog = ChatLog.builder()
-                .id(String.valueOf(playerNumber))
+                .id(UUID.randomUUID().toString())
                 .content(content)
                 .sender(playerNumber.toString())
                 .sendTime(LocalDateTime.now())
@@ -369,7 +369,7 @@ public class GameSession implements MiniGameListener {
     public ChatLog whiteChat(String content, Long playerNumber) {
 
         ChatLog chatLog = ChatLog.builder()
-                .id(String.valueOf(playerNumber))
+                .id(UUID.randomUUID().toString())
                 .content(content)
                 .sender(playerNumber.toString())
                 .sendTime(LocalDateTime.now())
@@ -382,7 +382,7 @@ public class GameSession implements MiniGameListener {
 
     public ChatLog eliminatedChat(String content, Long playerNumber) {
         ChatLog chatLog = ChatLog.builder()
-                .id(String.valueOf(playerNumber))
+                .id(UUID.randomUUID().toString())
                 .content(content)
                 .sender(playerNumber.toString())
                 .sendTime(LocalDateTime.now())
@@ -395,7 +395,7 @@ public class GameSession implements MiniGameListener {
 
     public ChatLog gameChat(String content, Long playerNumber) {
         ChatLog chatLog = ChatLog.builder()
-                .id(String.valueOf(playerNumber))
+                .id(UUID.randomUUID().toString())
                 .content(content)
                 .sender(playerNumber.toString())
                 .sendTime(LocalDateTime.now())
@@ -439,7 +439,7 @@ public class GameSession implements MiniGameListener {
 
     public ChatLog redChat(String content, Long playerNumber) {
         ChatLog chatLog = ChatLog.builder()
-                .id(String.valueOf(playerNumber))
+                .id(UUID.randomUUID().toString())
                 .content(content)
                 .sender(playerNumber.toString())
                 .sendTime(LocalDateTime.now())
