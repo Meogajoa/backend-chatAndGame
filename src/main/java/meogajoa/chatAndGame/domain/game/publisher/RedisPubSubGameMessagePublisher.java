@@ -29,6 +29,8 @@ public class RedisPubSubGameMessagePublisher {
     private final static String BUTTON_GAME_STATUS_KEY = "pubsub:buttonGameStatus";
     private final static String GAME_USER_LIST_INFO_KEY = "pubsub:gameUserListInfo";
     private final static String VOTE_GAME_STATUS_KEY = "pubsub:voteGameStatus";
+    private final static String VOTE_RESULT_KEY = "pubsub:voteResult";
+    private final static String ELIMINATED_USER_KEY = "pubsub:eliminatedUser";
 
     public void gameStart(MeogajoaMessage.GameSystemResponse gameSystemResponse) {
         try {
@@ -178,6 +180,43 @@ public class RedisPubSubGameMessagePublisher {
             stringRedisTemplate.convertAndSend(VOTE_GAME_STATUS_KEY, jsonString);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public void broadCastEliminatedNotice(String id, List<Long> eliminatedList, Long surviveCount) {
+        try {
+            MeogajoaMessage.VoteResultResponse voteResultResponse = MeogajoaMessage.VoteResultResponse.builder()
+                    .id(id)
+                    .type(MessageType.VOTE_RESULT)
+                    .sender("SYSTEM")
+                    .eliminatedId(eliminatedList)
+                    .surviveCount(surviveCount)
+                    .sendTime(LocalDateTime.now())
+                    .build();
+
+            String jsonString = objectMapper.writeValueAsString(voteResultResponse);
+
+            stringRedisTemplate.convertAndSend(VOTE_RESULT_KEY, jsonString);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void publishEliminatedNicknames(String id, String nickname) {
+        try {
+            MeogajoaMessage.EliminatedUserResponse eliminatedUserResponse = MeogajoaMessage.EliminatedUserResponse.builder()
+                    .id(id)
+                    .type(MessageType.ELIMINATED_USER)
+                    .sender("SYSTEM")
+                    .nickname(nickname)
+                    .sendTime(LocalDateTime.now())
+                    .build();
+
+            String jsonString = objectMapper.writeValueAsString(eliminatedUserResponse);
+
+            stringRedisTemplate.convertAndSend(ELIMINATED_USER_KEY, jsonString);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
         }
     }
 }

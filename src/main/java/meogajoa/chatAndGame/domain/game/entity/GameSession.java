@@ -69,20 +69,14 @@ public class GameSession implements MiniGameListener {
         this.chatLogMap = new HashMap<>();
         this.spyColorMap = spyColorMap;
 
-        for (int i = 1; i <= 3; i++) {
-            this.whiteTeam.add((long) i);
-        }
-
-        for (int i = 4; i <= 6; i++) {
-            this.blackTeam.add((long) i);
-        }
-
-        for (int i = 7; i <= 9; i++) {
-            this.redTeam.add((long) i);
-        }
-
         for (Player player : players) {
             this.players[player.getNumber().intValue()] = player;
+            TeamColor teamcolor = player.getTeamColor();
+            switch (teamcolor) {
+                case BLACK -> blackTeam.add(player.getNumber());
+                case WHITE -> whiteTeam.add(player.getNumber());
+                case RED -> redTeam.add(player.getNumber());
+            }
         }
     }
 
@@ -175,7 +169,6 @@ public class GameSession implements MiniGameListener {
         ZonedDateTime targetTime = ZonedDateTime.now(ZoneOffset.UTC).plusSeconds(20);
 
         redisPubSubGameMessagePublisher.broadCastMiniGameStartNotice(targetTime, MiniGameType.BUTTON_CLICK, id);
-        this.miniGame = new ButtonGame(redisPubSubGameMessagePublisher, id);
 
         while (true) {
             ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
@@ -190,6 +183,8 @@ public class GameSession implements MiniGameListener {
                 break;
             }
         }
+
+        this.miniGame = new ButtonGame(redisPubSubGameMessagePublisher, id);
 
 //        this.dayCount++;
 //        dayOrNight = "DAY";
@@ -216,7 +211,7 @@ public class GameSession implements MiniGameListener {
             }
         }
 
-        //this.miniGame.setBlind(true);
+        this.miniGame.setBlind(true);
         this.miniGame.publishCurrentStatus();
 
         while (true) {
@@ -234,7 +229,7 @@ public class GameSession implements MiniGameListener {
         }
 
         goToTheNext();
-        targetTime = ZonedDateTime.now(ZoneOffset.UTC).plusSeconds(30);
+        targetTime = ZonedDateTime.now(ZoneOffset.UTC).plusSeconds(40);
 
         List<Long> candidates = new ArrayList<>();
         for (int i = 1; i <= 9; i++) {
@@ -259,6 +254,30 @@ public class GameSession implements MiniGameListener {
             }
         }
         this.miniGame.publishCurrentStatus();
+
+        List<Long> preliminaryEliminated = new ArrayList<>();
+        if (miniGame instanceof VoteGame) {
+            preliminaryEliminated = ((VoteGame) miniGame).checkVoteResult();
+        }
+
+        if(preliminaryEliminated.size() == 1){
+            players[preliminaryEliminated.getFirst().intValue()].eliminate();
+            eliminated.add(preliminaryEliminated.getFirst());
+            surviveCount--;
+            List<Long> eliminatedList = new ArrayList<>();
+            eliminatedList.add(preliminaryEliminated.getFirst());
+            List<String> eliminatedNicknames = new ArrayList<>();
+            eliminatedNicknames.add(players[preliminaryEliminated.getFirst().intValue()].getNickname());
+            redisPubSubGameMessagePublisher.broadCastEliminatedNotice(id, eliminatedList, surviveCount);
+
+            for(String nickname : eliminatedNicknames){
+                redisPubSubGameMessagePublisher.publishEliminatedNicknames(id, nickname);
+            }
+        }else if(preliminaryEliminated.isEmpty()){
+
+        }else{
+
+        }
 
 
         gameSessionListener.onGameSessionEnd(id);

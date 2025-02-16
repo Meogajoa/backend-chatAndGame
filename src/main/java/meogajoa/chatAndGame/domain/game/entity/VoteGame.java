@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class VoteGame implements MiniGame {
     private String id;
@@ -67,4 +68,29 @@ public class VoteGame implements MiniGame {
     public void endGame() {
 
     }
+
+
+    public List<Long> checkVoteResult() {
+
+        Map<Long, Integer> counts = new HashMap<>();
+        for (Map.Entry<Long, List<Long>> entry : voteCount.entrySet()) {
+            counts.put(entry.getKey(), entry.getValue().size());
+        }
+
+
+        int maxVotes = counts.values().stream()
+                .filter(v -> v > 0)
+                .max(Integer::compare)
+                .orElse(0);
+
+        if (maxVotes == 0) {
+            return new ArrayList<>();
+        }
+
+        return counts.entrySet().stream()
+                .filter(e -> e.getValue() == maxVotes)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
+    }
+
 }

@@ -24,4 +24,8 @@ public class Player {
     public boolean isEliminated() {
         return isEliminated;
     }
+
+    public void eliminate() {
+        isEliminated = true;
+    }
 }

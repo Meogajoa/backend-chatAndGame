@@ -20,7 +20,10 @@ public enum MessageType {
     CHAT_LOGS("CHAT_LOGS"),
     PERSONAL_CHAT_LOGS("PERSONAL_CHAT_LOGS"),
     VOTE_GAME_STATUS("VOTE_GAME_STATUS"),
-    VOTE("VOTE");
+    VOTE("VOTE"),
+    RE_VOTE_NOTICE("RE_VOTE_NOTICE"),
+    VOTE_RESULT("VOTE_RESULT"),
+    ELIMINATED_USER("ELIMINATED_USER");
 
 
     private final String value;
