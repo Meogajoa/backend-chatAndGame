@@ -291,22 +291,30 @@ public class GameSession implements MiniGameListener {
     }
 
     public Boolean isBlackTeam(String sender) {
-        Player player = players[nicknameToPlayerNumber.get(sender).intValue()];
+        Long number = nicknameToPlayerNumber.get(sender);
+        if(number == null) return false;
+        Player player = players[number.intValue()];
         return player.getTeamColor().equals(TeamColor.BLACK);
     }
 
     public Boolean isWhiteTeam(String sender) {
-        Player player = players[nicknameToPlayerNumber.get(sender).intValue()];
+        Long number = nicknameToPlayerNumber.get(sender);
+        if(number == null) return false;
+        Player player = players[number.intValue()];
         return player.getTeamColor().equals(TeamColor.WHITE);
     }
 
     public boolean isEliminated(String sender) {
-        Player player = players[nicknameToPlayerNumber.get(sender).intValue()];
+        Long number = nicknameToPlayerNumber.get(sender);
+        if(number == null) return false;
+        Player player = players[number.intValue()];
         return player.isEliminated();
     }
 
     public void publishUserPersonalStatus(String nickname) {
-        Player player = players[nicknameToPlayerNumber.get(nickname).intValue()];
+        Long number = nicknameToPlayerNumber.get(nickname);
+        if(number == null) return;
+        Player player = players[number.intValue()];
         redisPubSubGameMessagePublisher.userInfoPersonal(player);
     }
 
@@ -451,7 +459,9 @@ public class GameSession implements MiniGameListener {
     }
 
     public boolean isRedTeam(String sender) {
-        Player player = players[nicknameToPlayerNumber.get(sender).intValue()];
+        Long number = nicknameToPlayerNumber.get(sender);
+        if(number == null) return false;
+        Player player = players[number.intValue()];
         return player.getTeamColor().equals(TeamColor.RED);
     }
 
