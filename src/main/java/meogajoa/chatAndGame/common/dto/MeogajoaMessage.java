@@ -213,4 +213,15 @@ public class MeogajoaMessage {
         private String nickname;
         private LocalDateTime sendTime;
     }
+
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Data
+    @Builder
+    public static class ReVoteNoticeResponse {
+        private MessageType type;
+        private String id;
+        private String sender;
+        private LocalDateTime sendTime;
+    }
 }

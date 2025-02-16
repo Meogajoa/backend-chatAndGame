@@ -239,6 +239,7 @@ public class GameSession implements MiniGameListener {
 
         this.miniGame = new VoteGame(candidates, redisPubSubGameMessagePublisher, id);
         redisPubSubGameMessagePublisher.broadCastMiniGameStartNotice(targetTime, MiniGameType.VOTE_GAME, id);
+        boolean revote = false;
 
         while(true){
             ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
@@ -276,9 +277,56 @@ public class GameSession implements MiniGameListener {
         }else if(preliminaryEliminated.isEmpty()){
 
         }else{
-
+            this.miniGame = new VoteGame(preliminaryEliminated, redisPubSubGameMessagePublisher, id);
+            revote = true;
         }
 
+        if(revote){
+            targetTime = ZonedDateTime.now(ZoneOffset.UTC).plusSeconds(30);
+            redisPubSubGameMessagePublisher.broadCastReVoteNotice(id);
+            redisPubSubGameMessagePublisher.broadCastMiniGameEndNotice(targetTime, MiniGameType.VOTE_GAME, id);
+            this.miniGame.publishCurrentStatus();
+
+            while(true){
+                ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+                if(!now.isBefore(targetTime)){
+                    break;
+                }
+
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+
+
+            List<Long> lastEliminated = new ArrayList<>();
+            if (miniGame instanceof VoteGame) {
+                lastEliminated = ((VoteGame) miniGame).checkVoteResult();
+            }
+
+            List<Long> lastEliminatedList = new ArrayList<>();
+            List<String> lastEliminatedNicknames = new ArrayList<>();
+            for(Long eliminated : lastEliminated){
+                players[eliminated.intValue()].eliminate();
+                surviveCount--;
+                lastEliminatedList.add(eliminated);
+                lastEliminatedNicknames.add(players[eliminated.intValue()].getNickname());
+            }
+
+            redisPubSubGameMessagePublisher.broadCastEliminatedNotice(id, lastEliminatedList, surviveCount);
+            for(String nickname : lastEliminatedNicknames){
+                redisPubSubGameMessagePublisher.publishEliminatedNicknames(id, nickname);
+            }
+        }
+
+        if(surviveCount <= 3){
+            gameSessionListener.onGameSessionEnd(id);
+        }
+
+        revote = false;
 
         gameSessionListener.onGameSessionEnd(id);
 

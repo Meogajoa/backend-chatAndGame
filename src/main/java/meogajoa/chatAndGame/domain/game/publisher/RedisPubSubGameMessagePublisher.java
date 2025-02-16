@@ -31,6 +31,7 @@ public class RedisPubSubGameMessagePublisher {
     private final static String VOTE_GAME_STATUS_KEY = "pubsub:voteGameStatus";
     private final static String VOTE_RESULT_KEY = "pubsub:voteResult";
     private final static String ELIMINATED_USER_KEY = "pubsub:eliminatedUser";
+    private final static String RE_VOTE_NOTICE_KEY = "pubsub:reVoteNotice";
 
     public void gameStart(MeogajoaMessage.GameSystemResponse gameSystemResponse) {
         try {
@@ -215,6 +216,23 @@ public class RedisPubSubGameMessagePublisher {
             String jsonString = objectMapper.writeValueAsString(eliminatedUserResponse);
 
             stringRedisTemplate.convertAndSend(ELIMINATED_USER_KEY, jsonString);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void broadCastReVoteNotice(String id) {
+        try {
+            MeogajoaMessage.ReVoteNoticeResponse reVoteNoticeResponse = MeogajoaMessage.ReVoteNoticeResponse.builder()
+                    .id(id)
+                    .type(MessageType.RE_VOTE_NOTICE)
+                    .sender("SYSTEM")
+                    .sendTime(LocalDateTime.now())
+                    .build();
+
+            String jsonString = objectMapper.writeValueAsString(reVoteNoticeResponse);
+
+            stringRedisTemplate.convertAndSend(RE_VOTE_NOTICE_KEY, jsonString);
         } catch (JsonProcessingException e) {
             e.printStackTrace();
         }
