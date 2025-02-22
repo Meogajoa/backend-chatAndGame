@@ -229,7 +229,7 @@ public class GameSession implements MiniGameListener {
         }
 
         goToTheNext();
-        targetTime = ZonedDateTime.now(ZoneOffset.UTC).plusSeconds(40);
+        targetTime = ZonedDateTime.now(ZoneOffset.UTC).plusSeconds(20);
 
         List<Long> candidates = new ArrayList<>();
         for (int i = 1; i <= 9; i++) {
@@ -254,7 +254,27 @@ public class GameSession implements MiniGameListener {
                 break;
             }
         }
+
+        targetTime = ZonedDateTime.now(ZoneOffset.UTC).plusSeconds(40);
+
+        redisPubSubGameMessagePublisher.broadCastMiniGameEndNotice(targetTime, MiniGameType.VOTE_GAME, id);
         this.miniGame.publishCurrentStatus();
+
+        while(true){
+            ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+            if(!now.isBefore(targetTime)){
+                break;
+            }
+
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+
+
 
         List<Long> preliminaryEliminated = new ArrayList<>();
         if (miniGame instanceof VoteGame) {
