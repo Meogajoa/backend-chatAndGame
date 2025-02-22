@@ -189,25 +189,6 @@ public class GameSession implements MiniGameListener {
 //        this.dayCount++;
 //        dayOrNight = "DAY";
 //        redisPubSubGameMessagePublisher.broadCastDayNotice(id, this.dayCount, dayOrNight);
-
-        targetTime = ZonedDateTime.now(ZoneOffset.UTC).plusSeconds(5);
-
-        redisPubSubGameMessagePublisher.broadCastMiniGameStartNotice(targetTime, MiniGameType.BUTTON_CLICK, id);
-
-        while(true){
-            ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
-            if(!now.isBefore(targetTime)){
-                break;
-            }
-
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                break;
-            }
-        }
-
         goToTheNext();
         redisPubSubGameMessagePublisher.broadCastMiniGameEndNotice(targetTime, MiniGameType.BUTTON_CLICK, id);
 
@@ -235,6 +216,23 @@ public class GameSession implements MiniGameListener {
         while (true) {
             ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
             if (!now.isBefore(targetTime)) {
+                break;
+            }
+
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+
+        targetTime = ZonedDateTime.now(ZoneOffset.UTC).plusSeconds(5);
+        redisPubSubGameMessagePublisher.broadCastMiniGameStartNotice(targetTime, MiniGameType.VOTE_GAME, id);
+
+        while(true){
+            ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+            if(!now.isBefore(targetTime)){
                 break;
             }
 
