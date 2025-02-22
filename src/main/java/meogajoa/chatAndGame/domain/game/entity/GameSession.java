@@ -190,6 +190,24 @@ public class GameSession implements MiniGameListener {
 //        dayOrNight = "DAY";
 //        redisPubSubGameMessagePublisher.broadCastDayNotice(id, this.dayCount, dayOrNight);
 
+        targetTime = ZonedDateTime.now(ZoneOffset.UTC).plusSeconds(5);
+
+        redisPubSubGameMessagePublisher.broadCastMiniGameStartNotice(targetTime, MiniGameType.BUTTON_CLICK, id);
+
+        while(true){
+            ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+            if(!now.isBefore(targetTime)){
+                break;
+            }
+
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+
         goToTheNext();
         redisPubSubGameMessagePublisher.broadCastMiniGameEndNotice(targetTime, MiniGameType.BUTTON_CLICK, id);
 
