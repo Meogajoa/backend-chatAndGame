@@ -30,6 +30,10 @@ public class ButtonGame implements MiniGame {
     }
 
     @Override
+    public void cancelButton(Long number, Long target){
+    }
+
+    @Override
     public void clickButton(Long number, String button){
         for(int i = 0; i < twentyButtons.size(); i++){
             if(twentyButtons.get(i).equals(number)){

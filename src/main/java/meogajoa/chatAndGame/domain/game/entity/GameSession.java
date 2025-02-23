@@ -110,6 +110,10 @@ public class GameSession implements MiniGameListener {
                 if(request.getType().equals(MessageType.VOTE) && this.miniGame instanceof VoteGame){
                     handleVoteRequest(request);
                 }
+
+                if(request.getType().equals(MessageType.CANCEL_VOTE) && this.miniGame instanceof VoteGame){
+                    handleCancelVoteRequest(request);
+                }
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -124,6 +128,10 @@ public class GameSession implements MiniGameListener {
 
     private void handleVoteRequest(MeogajoaMessage.GameMQRequest request) {
         this.miniGame.clickButton(nicknameToPlayerNumber.get(request.getSender()), request.getContent());
+    }
+
+    private void handleCancelVoteRequest(MeogajoaMessage.GameMQRequest request) {
+        this.miniGame.cancelButton(nicknameToPlayerNumber.get(request.getSender()), Long.valueOf(request.getContent()));
     }
 
     private void handleButtonClickRequest(MeogajoaMessage.GameMQRequest request) {
@@ -250,7 +258,7 @@ public class GameSession implements MiniGameListener {
             if(players[i].isEliminated()) continue;
             candidates.add((long) i);
         }
-        this.miniGame = new VoteGame(candidates, redisPubSubGameMessagePublisher, id);
+        this.miniGame = new VoteGame(candidates, redisPubSubGameMessagePublisher, id, playerNumberToNickname);
         targetTime = ZonedDateTime.now(ZoneOffset.UTC).plusSeconds(40);
 
 
@@ -293,7 +301,7 @@ public class GameSession implements MiniGameListener {
         }else if(preliminaryEliminated.isEmpty()){
 
         }else{
-            this.miniGame = new VoteGame(preliminaryEliminated, redisPubSubGameMessagePublisher, id);
+            this.miniGame = new VoteGame(preliminaryEliminated, redisPubSubGameMessagePublisher, id, playerNumberToNickname);
             revote = true;
         }
 
@@ -365,10 +373,12 @@ public class GameSession implements MiniGameListener {
         }
     }
 
+    @Override
     public String findNicknameByPlayerNumber(Long playerNumber) {
         return playerNumberToNickname.get(playerNumber);
     }
 
+    @Override
     public Long findPlayerNumberByNickname(String nickname) {
         return nicknameToPlayerNumber.get(nickname);
     }

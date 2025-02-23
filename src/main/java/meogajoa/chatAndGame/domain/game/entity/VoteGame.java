@@ -6,19 +6,29 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 public class VoteGame implements MiniGame {
     private String id;
     private final Map<Long, List<Long>> voteCount;
     private final RedisPubSubGameMessagePublisher redisPubSubGameMessagePublisher;
+    private final Map<Long, AtomicLong> availableVoteCount;
+    private final AtomicLong zeroCount = new AtomicLong(0);
+    private Map<Long, String> playerNumberToNickname;
 
-    public VoteGame(List<Long> candidates, RedisPubSubGameMessagePublisher redisPubSubGameMessagePublisher, String id) {
+    public VoteGame(List<Long> candidates, RedisPubSubGameMessagePublisher redisPubSubGameMessagePublisher, String id, Map<Long, String> playerNumberToNickname) {
         this.id = id;
         this.redisPubSubGameMessagePublisher = redisPubSubGameMessagePublisher;
+        this.playerNumberToNickname = playerNumberToNickname;
         voteCount = new HashMap<>();
         for (Long candidate : candidates) {
             voteCount.put(candidate, new ArrayList<>());
+        }
+
+        this.availableVoteCount = new HashMap<>();
+        for(long i = 1L; i <= 9L; i++){
+            availableVoteCount.put(i, new AtomicLong(1));
         }
     }
 
@@ -30,7 +40,9 @@ public class VoteGame implements MiniGame {
             result.put(entry.getKey().toString(), (long) entry.getValue().size());
         }
 
-        redisPubSubGameMessagePublisher.publishVoteGameStatus(id, result);
+        for(long i = 1L; i <= 9; i++){
+            redisPubSubGameMessagePublisher.publishAvailableVoteCount(id, playerNumberToNickname.get(i), availableVoteCount.get(i).get());
+        }
 
 
         System.out.println("현재 투표 현황: " + result);
@@ -40,13 +52,16 @@ public class VoteGame implements MiniGame {
     public void clickButton(Long userId, String button) {
         Long candidateId = Long.parseLong(button);
 
-        for (Map.Entry<Long, List<Long>> entry : voteCount.entrySet()) {
-            entry.getValue().removeIf(voter -> voter.equals(userId));
-        }
+        List<Long> list = voteCount.get(candidateId);
 
+        if(availableVoteCount.get(candidateId).get() == 0){
+            System.out.println("투표권이 없습니다.");
+            return;
+        }
 
         if (voteCount.containsKey(candidateId)) {
             voteCount.get(candidateId).add(userId);
+            availableVoteCount.get(userId).decrementAndGet();
         } else {
             System.out.println("잘못된 후보 번호입니다.");
         }
@@ -67,6 +82,19 @@ public class VoteGame implements MiniGame {
     @Override
     public void endGame() {
 
+    }
+
+    @Override
+    public void cancelButton(Long userId, Long target) {
+        List<Long> voteListOfTarget = voteCount.get(target);
+        for(Long voter : voteListOfTarget){
+            if(voter.equals(userId)) {
+                voteListOfTarget.remove(voter);
+                break;
+            }
+        }
+
+        publishCurrentStatus();
     }
 
 

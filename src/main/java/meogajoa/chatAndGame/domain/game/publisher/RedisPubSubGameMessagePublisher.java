@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import meogajoa.chatAndGame.common.dto.MeogajoaMessage;
 import meogajoa.chatAndGame.common.model.MessageType;
 import meogajoa.chatAndGame.domain.game.entity.Player;
+import meogajoa.chatAndGame.domain.game.manager.GameSessionManager;
 import meogajoa.chatAndGame.domain.game.model.MiniGameType;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,7 @@ import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +34,7 @@ public class RedisPubSubGameMessagePublisher {
     private final static String VOTE_RESULT_KEY = "pubsub:voteResult";
     private final static String ELIMINATED_USER_KEY = "pubsub:eliminatedUser";
     private final static String RE_VOTE_NOTICE_KEY = "pubsub:reVoteNotice";
+    private final static String AVAILABLE_VOTE_COUNT_KEY = "pubsub:availableVoteCount";
 
     public void gameStart(MeogajoaMessage.GameSystemResponse gameSystemResponse) {
         try {
@@ -234,6 +237,25 @@ public class RedisPubSubGameMessagePublisher {
 
             stringRedisTemplate.convertAndSend(RE_VOTE_NOTICE_KEY, jsonString);
         } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void publishAvailableVoteCount(String gameId, String userNickname, Long availableVoteCount) {
+        try {
+            MeogajoaMessage.AvailableVoteCountResponse availableVoteCountResponse = MeogajoaMessage.AvailableVoteCountResponse.builder()
+                    .id(UUID.randomUUID().toString())
+                    .type(MessageType.AVAILABLE_VOTE_COUNT)
+                    .sender("SYSTEM")
+                    .userNickname(userNickname)
+                    .availableVoteCount(availableVoteCount)
+                    .sendTime(LocalDateTime.now())
+                    .build();
+
+            String jsonString = objectMapper.writeValueAsString(availableVoteCountResponse);
+
+            stringRedisTemplate.convertAndSend(AVAILABLE_VOTE_COUNT_KEY, jsonString);
+        } catch (JsonProcessingException e){
             e.printStackTrace();
         }
     }

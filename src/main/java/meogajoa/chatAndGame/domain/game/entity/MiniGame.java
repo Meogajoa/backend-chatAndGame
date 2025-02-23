@@ -6,6 +6,5 @@ public interface MiniGame {
     void setBlind(boolean isBlind);
     void startGame();
     void endGame();
-
-
+    void cancelButton(Long number, Long target);
 }

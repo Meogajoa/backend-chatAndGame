@@ -224,4 +224,17 @@ public class MeogajoaMessage {
         private String sender;
         private LocalDateTime sendTime;
     }
+
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Data
+    @Builder
+    public static class AvailableVoteCountResponse {
+        private MessageType type;
+        private String id;
+        private String sender;
+        private Long availableVoteCount;
+        private String userNickname;
+        private LocalDateTime sendTime;
+    }
 }

@@ -45,6 +45,11 @@ public class SyncStreamHandler {
                     gameSessionManager.addRequest(gameMQRequest);
                     break;
                 }
+                case "CANCEL_VOTE":{
+                    MeogajoaMessage.GameMQRequest gameMQRequest = objectMapper.convertValue(record.getValue(), MeogajoaMessage.GameMQRequest.class);
+                    gameSessionManager.addRequest(gameMQRequest);
+                    break;
+                }
                 default:
                     break;
             }
