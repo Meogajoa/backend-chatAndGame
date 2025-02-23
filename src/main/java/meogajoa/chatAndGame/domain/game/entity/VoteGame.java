@@ -30,6 +30,8 @@ public class VoteGame implements MiniGame {
         for(long i = 1L; i <= 9L; i++){
             availableVoteCount.put(i, new AtomicLong(1));
         }
+
+        publishCurrentStatus();
     }
 
     @Override
@@ -40,10 +42,11 @@ public class VoteGame implements MiniGame {
             result.put(entry.getKey().toString(), (long) entry.getValue().size());
         }
 
+        redisPubSubGameMessagePublisher.publishVoteGameStatus(id, result);
+
         for(long i = 1L; i <= 9; i++){
             redisPubSubGameMessagePublisher.publishAvailableVoteCount(id, playerNumberToNickname.get(i), availableVoteCount.get(i).get());
         }
-
 
         System.out.println("현재 투표 현황: " + result);
     }
@@ -52,9 +55,9 @@ public class VoteGame implements MiniGame {
     public void clickButton(Long userId, String button) {
         Long candidateId = Long.parseLong(button);
 
-        List<Long> list = voteCount.get(candidateId);
+        List<Long> list = voteCount.get(userId);
 
-        if(availableVoteCount.get(candidateId).get() == 0){
+        if(availableVoteCount.get(userId).get() == 0){
             System.out.println("투표권이 없습니다.");
             return;
         }
