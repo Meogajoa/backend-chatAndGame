@@ -89,13 +89,16 @@ public class VoteGame implements MiniGame {
 
     @Override
     public void cancelButton(Long userId, Long target) {
+        System.out.println("VOTEGAME 취소 시도");
         List<Long> voteListOfTarget = voteCount.get(target);
         for(Long voter : voteListOfTarget){
             if(voter.equals(userId)) {
                 voteListOfTarget.remove(voter);
+                availableVoteCount.get(userId).incrementAndGet();
                 break;
             }
         }
+
 
         publishCurrentStatus();
     }
