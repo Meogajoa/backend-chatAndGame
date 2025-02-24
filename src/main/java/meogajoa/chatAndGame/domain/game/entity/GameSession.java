@@ -301,13 +301,12 @@ public class GameSession implements MiniGameListener {
         }else if(preliminaryEliminated.isEmpty()){
 
         }else{
-
             revote = true;
         }
 
         if(revote){
             targetTime = ZonedDateTime.now(ZoneOffset.UTC).plusSeconds(5);
-            redisPubSubGameMessagePublisher.broadCastMiniGameStartNotice(targetTime, MiniGameType.VOTE_GAME, id);
+            redisPubSubGameMessagePublisher.broadCastMiniGameStartNotice(targetTime, MiniGameType.RE_VOTE_GAME, id);
             this.miniGame.publishCurrentStatus();
 
             while(true){
@@ -326,7 +325,7 @@ public class GameSession implements MiniGameListener {
 
             targetTime = ZonedDateTime.now(ZoneOffset.UTC).plusSeconds(40);
             this.miniGame = new VoteGame(preliminaryEliminated, redisPubSubGameMessagePublisher, id, playerNumberToNickname);
-            redisPubSubGameMessagePublisher.broadCastMiniGameEndNotice(targetTime, MiniGameType.VOTE_GAME, id);
+            redisPubSubGameMessagePublisher.broadCastMiniGameEndNotice(targetTime, MiniGameType.RE_VOTE_GAME, id);
             this.miniGame.publishCurrentStatus();
 
             while(true){
