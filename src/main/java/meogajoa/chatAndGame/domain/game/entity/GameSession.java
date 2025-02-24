@@ -301,13 +301,31 @@ public class GameSession implements MiniGameListener {
         }else if(preliminaryEliminated.isEmpty()){
 
         }else{
-            this.miniGame = new VoteGame(preliminaryEliminated, redisPubSubGameMessagePublisher, id, playerNumberToNickname);
+
             revote = true;
         }
 
         if(revote){
-            targetTime = ZonedDateTime.now(ZoneOffset.UTC).plusSeconds(30);
-            redisPubSubGameMessagePublisher.broadCastReVoteNotice(id);
+            targetTime = ZonedDateTime.now(ZoneOffset.UTC).plusSeconds(5);
+            redisPubSubGameMessagePublisher.broadCastMiniGameStartNotice(targetTime, MiniGameType.VOTE_GAME, id);
+            this.miniGame.publishCurrentStatus();
+
+            while(true){
+                ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+                if(!now.isBefore(targetTime)){
+                    break;
+                }
+
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+
+            targetTime = ZonedDateTime.now(ZoneOffset.UTC).plusSeconds(40);
+            this.miniGame = new VoteGame(preliminaryEliminated, redisPubSubGameMessagePublisher, id, playerNumberToNickname);
             redisPubSubGameMessagePublisher.broadCastMiniGameEndNotice(targetTime, MiniGameType.VOTE_GAME, id);
             this.miniGame.publishCurrentStatus();
 
