@@ -305,7 +305,7 @@ public class GameSession implements MiniGameListener {
         }
 
         if(revote){
-            targetTime = ZonedDateTime.now(ZoneOffset.UTC).plusSeconds(5);
+            targetTime = ZonedDateTime.now(ZoneOffset.UTC).plusSeconds(10);
             redisPubSubGameMessagePublisher.broadCastMiniGameStartNotice(targetTime, MiniGameType.RE_VOTE_GAME, id);
             this.miniGame.publishCurrentStatus();
 

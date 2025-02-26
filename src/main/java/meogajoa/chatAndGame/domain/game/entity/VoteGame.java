@@ -46,6 +46,7 @@ public class VoteGame implements MiniGame {
 
         for(long i = 1L; i <= 9; i++){
             redisPubSubGameMessagePublisher.publishAvailableVoteCount(id, playerNumberToNickname.get(i), availableVoteCount.get(i).get());
+            //System.out.println("플레이어 " + playerNumberToNickname.get(i) + "의 투표권: " + availableVoteCount.get(i).get());
         }
 
         System.out.println("현재 투표 현황: " + result);
