@@ -72,6 +72,7 @@ public class RedisPubSubGameMessagePublisher {
                     .sender("SYSTEM")
                     .sendTime(LocalDateTime.now())
                     .type(MessageType.GAME_DAY_OR_NIGHT)
+                    .gameId(gameId)
                     .day(day)
                     .dayOrNight(dayOrNight)
                     .build();

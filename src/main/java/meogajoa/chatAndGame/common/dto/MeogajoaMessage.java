@@ -66,6 +66,7 @@ public class MeogajoaMessage {
     public static class GameDayOrNightResponse {
         private String id;
         private String sender;
+        private String gameId;
         private MessageType type;
         private Long day;
         private String dayOrNight;
